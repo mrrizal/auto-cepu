@@ -29,7 +29,6 @@ if __name__ == "__main__":
             parser_service = PythonCodeParserService(repo_path)
             chunks = parser_service.parse_code()
             print(len(chunks), "chunks found.")
-            exit(0)
             if not chunks:
                 print("No code chunks found to embed.")
                 exit(0)

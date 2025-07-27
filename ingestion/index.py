@@ -305,19 +305,11 @@ class ChromaDBIndexingService(IndexingService):
 
         for chunk in chunks:
             # Skip empty chunks
-            if not chunk.get('code') or not chunk['code'].strip():
+            if not chunk.get('normalized_code') or not chunk['normalized_code'].strip():
                 continue
 
-            # Document content - what gets vectorized
-            # Option 1: Just the code
-            document_content = chunk['code']
-
-            # Option 2: Code + docstring (often better for semantic search)
-            if chunk.get('docstring'):
-                document_content = f"{chunk['docstring']}\n\n{chunk['code']}"
-
             # Option 3: Add more context for better retrieval
-            context_parts = [chunk['code']]
+            context_parts = [chunk['normalized_code']]
             if chunk.get('docstring'):
                 context_parts.insert(0, f"'''{chunk['docstring']}'''")
             if chunk.get('class_name'):
@@ -349,7 +341,7 @@ class ChromaDBIndexingService(IndexingService):
 
         # Remove fields that shouldn't be in metadata (too large or not useful for filtering)
         fields_to_remove = [
-            'code',           # Too large, goes in document content
+            'normalized_code',  # Too large, goes in document content
             'docstring',      # Can be large, include in document if needed
             'class_docstring' # Can be large, include in document if needed
         ]
@@ -479,13 +471,26 @@ class ChromaDBIndexingService(IndexingService):
         Returns:
             Query results with documents, metadata, and distances
         """
-
         results = self.collection.query(
             query_texts=[query],
             n_results=n_results,
             where=where
         )
         return results
+
+    def query_similar_code(self, code: str) -> Dict:
+        results = self.query_code(query=code)
+        duplicated_index = []
+        for index, distance in enumerate(results['distances'][0]):
+            if distance < 0.55:
+                duplicated_index.append(index)
+
+        similary_code = []
+        for index in duplicated_index:
+            similary_code.append({
+                "code": results['metadatas'][0][index]['code'],
+            })
+        return similary_code
 
     def get_collection_stats(self) -> Dict[str, Any]:
         """Get statistics about the indexed collection"""
