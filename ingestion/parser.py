@@ -35,6 +35,7 @@ class PythonCodeParserService(CodeParserService):
         filename = filepath.split(os.sep)[-1] if filepath else None
 
         # Basic metadata (keeping your original structure)
+
         metadata = {
             "type": type(node).__name__,
             "name": getattr(node, "name", None),
@@ -322,9 +323,15 @@ class PythonCodeParserService(CodeParserService):
         """Extract source code for a specific AST node with proper indentation"""
         lines = original_code.split('\n')
         start_line = node.lineno - 1
-        end_line = node.end_lineno
 
-        # Extract the lines
+        # Handle end_line properly - ensure we include the last line
+        if node.end_lineno is not None:
+            end_line = node.end_lineno
+        else:
+            # Fallback: try to find the end by looking for the next node at the same level
+            end_line = len(lines)
+
+        # Extract the lines - ensure we include the end_line
         node_lines = lines[start_line:end_line]
 
         # Remove common leading whitespace (dedent)
@@ -343,6 +350,7 @@ class PythonCodeParserService(CodeParserService):
         # Extract each method from the class
         for item in class_node.body:
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                # Use the original full file code instead of just class code
                 method_code = self.extract_node_code(item, code)
 
                 if method_code.strip() == "":
@@ -363,7 +371,12 @@ class PythonCodeParserService(CodeParserService):
         """
         Chunk Python code based on AST nodes (functions, classes, etc.)
         """
-        tree = ast.parse(code)
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as e:
+            print(f"Syntax error in {filepath}: {e}")
+            return []
+
         chunks = []
 
         # Extract imports first
@@ -371,18 +384,11 @@ class PythonCodeParserService(CodeParserService):
 
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef)):
-                # Get the source code for this node
-                start_line = node.lineno
-                end_line = node.end_lineno
-
-                # Extract the actual code
-                lines = code.split('\n')
-                chunk_code = '\n'.join(lines[start_line-1:end_line])
-
+                # Skip certain nodes
                 if isinstance(node, ast.ClassDef) and node.name == "Migration":
-                    continue  # Skip Migration class
+                    continue
 
-                if node.name in [
+                if hasattr(node, 'name') and node.name in [
                     "__init__",
                     "__str__",
                     "__repr__",
@@ -390,13 +396,19 @@ class PythonCodeParserService(CodeParserService):
                 ]:
                     continue
 
+                # Extract the actual code using the improved method
+                chunk_code = self.extract_node_code(node, code)
+
+                if not chunk_code.strip():
+                    continue
+
                 chunk = self.extract_chunk_metadata(node, chunk_code, filepath=filepath)
                 chunks.append(chunk)
 
                 if isinstance(node, ast.ClassDef):
-                    # Extract methods from the class
+                    # Extract methods from the class using the full file code
                     class_chunks = self.extract_methods_from_class(
-                        chunk_code,
+                        code,  # Pass the full file code, not just chunk_code
                         node,
                         filepath=filepath
                     )
