@@ -6,15 +6,15 @@ class PromptGenerator:
         self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
 
     def generate_coding_style_prompt(self, code_snippet: str) -> str:
-        prompt = f"""##### Instruction:
+        prompt = f"""## Instruction
 {self.base_header}
 
-##### Code Snippet:
+## Code Snippet
 ```python
 {code_snippet.strip()}
 ```
 
-##### Analysis Areas:
+## Analysis Areas
 1. **Naming & Style**: Variable/function names, PEP 8 compliance
 2. **Code Structure**: DRY principles, complexity, readability
 3. **Design Patterns**: Appropriate pattern usage or missed opportunities
@@ -23,34 +23,40 @@ class PromptGenerator:
 6. **Error Handling**: Exception handling and edge cases
 7. **Security**: Potential security vulnerabilities
 
-##### Output Format:
-**ISSUES FOUND:**
-- [Category] - [Specific issue with line reference if applicable]
-- [Category] - [Specific issue with line reference if applicable]
+## Expected Output Format
+Use the following GitHub markdown format for your response:
 
-**RECOMMENDATIONS:**
+### 🐛 Issues Found
+- **[Category]** - [Specific issue with line reference if applicable]
+- **[Category]** - [Specific issue with line reference if applicable]
+
+### 💡 Recommendations
 - [Specific actionable improvement]
 - [Refactoring suggestion with brief example if needed]
 
-**SEVERITY ASSESSMENT:**
-- Critical: [Count] (security, logic errors)
-- Major: [Count] (SOLID violations, performance issues)
-- Minor: [Count] (style, naming improvements)
+### 📊 Severity Assessment
+| Severity | Count | Description |
+|----------|-------|-------------|
+| 🔴 Critical | [Count] | Security vulnerabilities, logic errors |
+| 🟡 Major | [Count] | SOLID violations, performance issues |
+| 🟢 Minor | [Count] | Style improvements, naming conventions |
 
-**OVERALL RATING:** [POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]
+### 🎯 Overall Rating
+**Rating:** `[POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]`
 
-##### Guidelines:
+## Guidelines
 - Be specific about line numbers when possible
 - Provide actionable suggestions, not just criticism
 - Focus on the most impactful improvements first
 - Consider maintainability and readability
-- Keep feedback concise but thorough"""
+- Keep feedback concise but thorough
+- Use GitHub markdown formatting with appropriate emojis and tables"""
         return prompt
 
     def extract_similar_snippets(self, similar_codes: dict) -> str:
         result = ""
         for counter, similar_code in enumerate(similar_codes):
-            result += f"[Code {counter + 1}]\n"
+            result += f"#### Code {counter + 1}\n"
             doc = similar_code['code']
             if len(doc) > 1000:
                 doc = doc[:1000] + "..."
@@ -66,113 +72,130 @@ class PromptGenerator:
         if not similar_code:
             return ""
 
-        prompt = f"""You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
+        prompt = f"""## Code Duplication Analysis
 
-##### Target Code (from current PR):
+You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
+
+### 🎯 Target Code (from current PR)
 ```python
 {code_snippet.strip()}
 ```
 
-##### Reference Code List (existing codebase):
+### 📚 Reference Code List (existing codebase)
 {similar_code}
 
-##### Analysis Required:
+## Analysis Required
 1. **Duplication Check**: Compare target code with each reference code
 2. **Code Quality**: Identify potential issues in target code
 3. **Recommendations**: Suggest specific improvements
 
-##### Output Format:
-**SIMILARITY ANALYSIS:**
-- Reference #1: [DUPLICATE/SIMILAR/DIFFERENT] - X% similarity
-  - Reason: [brief explanation]
-- Reference #2: [DUPLICATE/SIMILAR/DIFFERENT] - X% similarity
-  - Reason: [brief explanation]
+## Expected Output Format
+Use the following GitHub markdown format for your response:
 
-**ISSUES FOUND:**
+### 🔍 Similarity Analysis
+| Reference | Status | Similarity | Reason |
+|-----------|--------|------------|---------|
+| #1 | `[DUPLICATE/SIMILAR/DIFFERENT]` | X% | [brief explanation] |
+| #2 | `[DUPLICATE/SIMILAR/DIFFERENT]` | X% | [brief explanation] |
+
+### 🐛 Issues Found
 - [List specific issues: logic errors, performance, complexity, etc.]
 
-**RECOMMENDATIONS:**
+### 💡 Recommendations
 - [Specific actionable suggestions]
 - [Refactoring suggestions if duplication found]
 
-**SUMMARY:**
-Overall Status: [NEEDS_REFACTORING/ACCEPTABLE/GOOD]
+### 📋 Summary
+**Overall Status:** `[NEEDS_REFACTORING/ACCEPTABLE/GOOD]`
 
-##### Guidelines:
-- DUPLICATE: >90% similar logic, same functionality
-- SIMILAR: 70-90% similar, shared patterns but different purpose
-- DIFFERENT: <70% similar
+## Guidelines
+- **DUPLICATE**: >90% similar logic, same functionality
+- **SIMILAR**: 70-90% similar, shared patterns but different purpose
+- **DIFFERENT**: <70% similar
 - Focus on logic similarity, not variable names
 - Be concise but specific
 - Prioritize actionable feedback
+- Use GitHub markdown formatting with tables and badges
 
-##### Example:
-Target: `def calculate_total(items): return sum(item.price for item in items)`
-Reference: `def get_sum(products): return sum(p.cost for p in products)`
+### Example Analysis
+**Target:** `def calculate_total(items): return sum(item.price for item in items)`
+**Reference:** `def get_sum(products): return sum(p.cost for p in products)`
 
-**SIMILARITY ANALYSIS:**
-- Reference #1: SIMILAR - 85% similarity
-  - Reason: Same logic pattern, different variable names and attribute names
+| Reference | Status | Similarity | Reason |
+|-----------|--------|------------|---------|
+| #1 | `SIMILAR` | 85% | Same logic pattern, different variable names and attribute names |
 
-**RECOMMENDATIONS:**
+**Recommendations:**
 - Consider consolidating similar functions
 - Use consistent naming conventions
 """
         return prompt.strip()
 
     def generate_summary_prompt(self, coding_style_result: str, duplication_check_result: str) -> str:
-        prompt = f"""You are a senior code review engineer. Synthesize the following two code analysis reports into a unified, actionable summary.
+        prompt = f"""## Code Review Summary Generation
 
-##### Input Reports:
+You are a senior code review engineer. Synthesize the following two code analysis reports into a unified, actionable summary using GitHub markdown format.
 
-**Duplication Analysis:**
+### Input Reports
+
+#### Duplication Analysis
 {duplication_check_result}
 
-**Code Quality Analysis:**
+#### Code Quality Analysis
 {coding_style_result}
 
-##### Task Requirements:
+## Task Requirements
 1. **Consolidate findings** - Merge overlapping issues, avoid redundancy
 2. **Prioritize by impact** - Critical issues first, then major, then minor
 3. **Provide actionable recommendations** - Specific steps for improvement
 4. **Assess overall quality** - Final verdict on code readiness
 
-##### Output Format:
+## Expected Output Format
+Use the following GitHub markdown format for your response:
 
-## 🔍 Code Review Summary
+# 🔍 Code Review Summary
 
-### Critical Issues (Must Fix)
-- [Issue with severity justification]
-- [Issue with severity justification]
+## 🔴 Critical Issues (Must Fix)
+- [ ] [Issue with severity justification]
+- [ ] [Issue with severity justification]
 
-### Major Issues (Should Fix)
-- [Issue with impact explanation]
-- [Issue with impact explanation]
+## 🟡 Major Issues (Should Fix)
+- [ ] [Issue with impact explanation]
+- [ ] [Issue with impact explanation]
 
-### Minor Issues (Nice to Have)
-- [Improvement suggestion]
-- [Improvement suggestion]
+## 🟢 Minor Issues (Nice to Have)
+- [ ] [Improvement suggestion]
+- [ ] [Improvement suggestion]
 
-### Duplication Assessment
-- **Status**: [NO_DUPLICATES/MINOR_SIMILARITY/SIGNIFICANT_DUPLICATION]
-- **Details**: [Brief explanation of duplication findings]
-- **Action**: [Specific refactoring recommendation if needed]
+## 🔄 Duplication Assessment
+| Metric | Value |
+|--------|-------|
+| **Status** | `[NO_DUPLICATES/MINOR_SIMILARITY/SIGNIFICANT_DUPLICATION]` |
+| **Details** | [Brief explanation of duplication findings] |
+| **Action** | [Specific refactoring recommendation if needed] |
 
-### Recommended Actions
-1. [Prioritized action item]
-2. [Prioritized action item]
-3. [Prioritized action item]
+## 📋 Recommended Actions
+1. **Priority 1:** [Prioritized action item]
+2. **Priority 2:** [Prioritized action item]
+3. **Priority 3:** [Prioritized action item]
 
-### Overall Assessment
-- **Code Quality**: [POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]
-- **Ready for Merge**: [YES/NO/WITH_CHANGES]
-- **Confidence**: [HIGH/MEDIUM/LOW]
+## 📊 Overall Assessment
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Code Quality** | `[POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]` | [Brief justification] |
+| **Ready for Merge** | `[YES/NO/WITH_CHANGES]` | [Brief justification] |
+| **Confidence** | `[HIGH/MEDIUM/LOW]` | [Brief justification] |
 
-##### Guidelines:
+---
+> **Note:** This review was generated automatically. Please address critical and major issues before merging.
+
+## Guidelines for Response
+- Use GitHub markdown with emojis, tables, and checkboxes
 - Be concise but comprehensive
 - Focus on actionable feedback
-- Justify severity levels
+- Justify severity levels with brief explanations
 - Avoid repeating similar points from both reports
-- Prioritize maintainability and readability concerns"""
+- Prioritize maintainability and readability concerns
+- Use appropriate status badges and formatting"""
 
         return prompt.strip()
