@@ -72,7 +72,7 @@ async def review_code(
         style_result = await code_reviewer.review(review_prompt)
         duplication_result = None
     else:
-        logger.debug(f"Found {len(similar_code)} similar code snippets.")
+        logger.info(f"Found {len(similar_code)} similar code snippets.")
         duplicate_code_check_prompt = prompt_generator.\
             generate_code_duplication_check_prompt(code, similar_code)
 

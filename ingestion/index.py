@@ -485,15 +485,16 @@ class ChromaDBIndexingService(IndexingService):
             if distance < 0.55:
                 duplicated_index.append(index)
 
-        from pprint import pprint
         similary_code = []
         for index in duplicated_index:
+            similarity_percentage = (1 - results['distances'][0][index]) * 100
             similary_code.append({
                 "code": results['metadatas'][0][index]['code'],
                 'file': results['metadatas'][0][index]['filepath'].split('/')[-1],
                 'start_line': results['metadatas'][0][index]['start_line'],
                 'name': results['metadatas'][0][index]['name'],
-                'distance': results['distances'][0][index]
+                'similarity': "{:.2f}%".format(similarity_percentage)
+
             })
         return similary_code
 
