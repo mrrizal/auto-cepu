@@ -1,45 +1,62 @@
 import textwrap
 
+
 class PromptGenerator:
     def __init__(self):
-        self.code_quality_prompt = (
-            "- Naming consistency\n"
-            "- DRY and clean code principles\n"
-            "- Appropriate use of design patterns\n"
-            "- Violations of SOLID principles (SRP, OCP, LSP, ISP, DIP)\n"
-            "- Opportunities for simplification or refactoring"
-        )
-        self.base_header = "You are an expert software engineer specializing in Python. Please analyze the following code snippet and check for:"
-        self.footer = "Provide your feedback in a concise manner."
+        self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
 
     def generate_coding_style_prompt(self, code_snippet: str) -> str:
         prompt = f"""##### Instruction:
 {self.base_header}
-{self.code_quality_prompt}
 
 ##### Code Snippet:
-```
+```python
 {code_snippet.strip()}
 ```
-{self.footer}"""
+
+##### Analysis Areas:
+1. **Naming & Style**: Variable/function names, PEP 8 compliance
+2. **Code Structure**: DRY principles, complexity, readability
+3. **Design Patterns**: Appropriate pattern usage or missed opportunities
+4. **SOLID Principles**: SRP, OCP, LSP, ISP, DIP violations
+5. **Performance**: Potential bottlenecks or inefficiencies
+6. **Error Handling**: Exception handling and edge cases
+7. **Security**: Potential security vulnerabilities
+
+##### Output Format:
+**ISSUES FOUND:**
+- [Category] - [Specific issue with line reference if applicable]
+- [Category] - [Specific issue with line reference if applicable]
+
+**RECOMMENDATIONS:**
+- [Specific actionable improvement]
+- [Refactoring suggestion with brief example if needed]
+
+**SEVERITY ASSESSMENT:**
+- Critical: [Count] (security, logic errors)
+- Major: [Count] (SOLID violations, performance issues)
+- Minor: [Count] (style, naming improvements)
+
+**OVERALL RATING:** [POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]
+
+##### Guidelines:
+- Be specific about line numbers when possible
+- Provide actionable suggestions, not just criticism
+- Focus on the most impactful improvements first
+- Consider maintainability and readability
+- Keep feedback concise but thorough"""
         return prompt
 
     def extract_similar_snippets(self, similar_codes: dict) -> str:
-        index_document = []
-        for index, distance in enumerate(similar_codes['distances'][0]):
-            if distance > 0.55:
-                continue
-            index_document.append(index)
-
-        similar_code = ""
-        for counter, index in enumerate(index_document):
-            doc = similar_codes['documents'][0][index]
-            similar_code += f"[Code {counter + 1}]\n"
+        result = ""
+        for counter, similar_code in enumerate(similar_codes):
+            result += f"[Code {counter + 1}]\n"
+            doc = similar_code['code']
             if len(doc) > 1000:
                 doc = doc[:1000] + "..."
-            similar_code += f"```\n{doc.strip()}\n```\n\n"
+            result += f"```python\n{doc.strip()}\n```\n\n"
 
-        return similar_code.strip()
+        return result.strip()
 
     def generate_code_duplication_check_prompt(self, code_snippet: str, similar_codes: dict) -> str:
         if not code_snippet.strip():
@@ -49,51 +66,7 @@ class PromptGenerator:
         if not similar_code:
             return ""
 
-        prompt = f"""You are a code reviewer AI specialized in Python. Your task is to identify if the `target_code` has duplicated or similar logic with any of the `reference_code_list`.
-
-##### Target Code:
-```python
-{code_snippet.strip()}
-```
-
-##### Reference Code List:
-{similar_code}
-
-##### Task:
-Analyze the target code and check for duplication or similar logic from the reference code list.
-- Point out any overlap or copy-paste behavior.
-- Suggest refactoring if needed.
-- Keep your response short, concise, and in bullet points.
-"""
-        return prompt
-
-    def generate_summary_prompt(self, coding_style_result, duplication_check_result) -> str:
-        prompt = f"""
-You are a senior software engineer reviewing the following two LLM-generated code review results:
-
-1. **Duplication Report**: Reviews code for repeated or redundant logic.
-2. **Style Report**: Reviews naming, formatting, structure, and clean code principles.
-
-Your task is to:
-- Merge both results into a single, cohesive summary.
-- Avoid repeating identical or overly verbose points.
-- Highlight the most critical issues and recommend improvements.
-- Use clear, concise language in markdown format.
-- give a final summary of the overall code quality.
-
-Here are the two results:
-
-### Duplication Result:
-{duplication_check_result}
-
-### Style Result:
-{coding_style_result}
-"""
-        return prompt.strip()
-
-
-def create_review_prompt(code_snippet: str, similar_code: str) -> str:
-    prompt = f"""You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
+        prompt = f"""You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
 
 ##### Target Code (from current PR):
 ```python
@@ -145,5 +118,61 @@ Reference: `def get_sum(products): return sum(p.cost for p in products)`
 - Consider consolidating similar functions
 - Use consistent naming conventions
 """
+        return prompt.strip()
 
-    return prompt
+    def generate_summary_prompt(self, coding_style_result: str, duplication_check_result: str) -> str:
+        prompt = f"""You are a senior code review engineer. Synthesize the following two code analysis reports into a unified, actionable summary.
+
+##### Input Reports:
+
+**Duplication Analysis:**
+{duplication_check_result}
+
+**Code Quality Analysis:**
+{coding_style_result}
+
+##### Task Requirements:
+1. **Consolidate findings** - Merge overlapping issues, avoid redundancy
+2. **Prioritize by impact** - Critical issues first, then major, then minor
+3. **Provide actionable recommendations** - Specific steps for improvement
+4. **Assess overall quality** - Final verdict on code readiness
+
+##### Output Format:
+
+## 🔍 Code Review Summary
+
+### Critical Issues (Must Fix)
+- [Issue with severity justification]
+- [Issue with severity justification]
+
+### Major Issues (Should Fix)
+- [Issue with impact explanation]
+- [Issue with impact explanation]
+
+### Minor Issues (Nice to Have)
+- [Improvement suggestion]
+- [Improvement suggestion]
+
+### Duplication Assessment
+- **Status**: [NO_DUPLICATES/MINOR_SIMILARITY/SIGNIFICANT_DUPLICATION]
+- **Details**: [Brief explanation of duplication findings]
+- **Action**: [Specific refactoring recommendation if needed]
+
+### Recommended Actions
+1. [Prioritized action item]
+2. [Prioritized action item]
+3. [Prioritized action item]
+
+### Overall Assessment
+- **Code Quality**: [POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]
+- **Ready for Merge**: [YES/NO/WITH_CHANGES]
+- **Confidence**: [HIGH/MEDIUM/LOW]
+
+##### Guidelines:
+- Be concise but comprehensive
+- Focus on actionable feedback
+- Justify severity levels
+- Avoid repeating similar points from both reports
+- Prioritize maintainability and readability concerns"""
+
+        return prompt.strip()

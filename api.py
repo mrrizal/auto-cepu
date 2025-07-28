@@ -29,6 +29,7 @@ class CodeReviewResponse(BaseModel):
     duplication_review: str
     style_review: str
     summary: str
+    reference: list
 
 
 def get_indexing_service(project_name: str = "code_repository"):
@@ -58,8 +59,8 @@ async def review_code(
         raise HTTPException(status_code=400, detail="Code snippet cannot be empty.")
 
     try:
-        code = normalize_code(code)
-        similar_code = indexing_service.query_similar_code(code)
+        normalized_code = normalize_code(code)
+        similar_code = indexing_service.query_similar_code(normalized_code)
     except SyntaxError:
         similar_code = []
 
@@ -92,5 +93,6 @@ async def review_code(
     return CodeReviewResponse(
         duplication_review=duplication_result['response'] if duplication_result else "No duplication found.",
         style_review=style_result['response'] if style_result else "No style issues found.",
-        summary=summary['response'] if summary else "No summary available."
+        summary=summary['response'] if summary else "No summary available.",
+        reference=similar_code if similar_code else []
     )
