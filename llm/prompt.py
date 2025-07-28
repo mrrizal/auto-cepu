@@ -90,3 +90,60 @@ Here are the two results:
 {coding_style_result}
 """
         return prompt.strip()
+
+
+def create_review_prompt(code_snippet: str, similar_code: str) -> str:
+    prompt = f"""You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
+
+##### Target Code (from current PR):
+```python
+{code_snippet.strip()}
+```
+
+##### Reference Code List (existing codebase):
+{similar_code}
+
+##### Analysis Required:
+1. **Duplication Check**: Compare target code with each reference code
+2. **Code Quality**: Identify potential issues in target code
+3. **Recommendations**: Suggest specific improvements
+
+##### Output Format:
+**SIMILARITY ANALYSIS:**
+- Reference #1: [DUPLICATE/SIMILAR/DIFFERENT] - X% similarity
+  - Reason: [brief explanation]
+- Reference #2: [DUPLICATE/SIMILAR/DIFFERENT] - X% similarity
+  - Reason: [brief explanation]
+
+**ISSUES FOUND:**
+- [List specific issues: logic errors, performance, complexity, etc.]
+
+**RECOMMENDATIONS:**
+- [Specific actionable suggestions]
+- [Refactoring suggestions if duplication found]
+
+**SUMMARY:**
+Overall Status: [NEEDS_REFACTORING/ACCEPTABLE/GOOD]
+
+##### Guidelines:
+- DUPLICATE: >90% similar logic, same functionality
+- SIMILAR: 70-90% similar, shared patterns but different purpose
+- DIFFERENT: <70% similar
+- Focus on logic similarity, not variable names
+- Be concise but specific
+- Prioritize actionable feedback
+
+##### Example:
+Target: `def calculate_total(items): return sum(item.price for item in items)`
+Reference: `def get_sum(products): return sum(p.cost for p in products)`
+
+**SIMILARITY ANALYSIS:**
+- Reference #1: SIMILAR - 85% similarity
+  - Reason: Same logic pattern, different variable names and attribute names
+
+**RECOMMENDATIONS:**
+- Consider consolidating similar functions
+- Use consistent naming conventions
+"""
+
+    return prompt
