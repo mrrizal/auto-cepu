@@ -97,8 +97,15 @@ async def review_code(
     # except SyntaxError:
     #     similar_code = []
 
-    # logger.info("Generating review prompt for the provided code snippet.")
-    # review_prompt = prompt_generator.generate_coding_style_prompt(code)
+    print(request.added_code)
+    logger.info("Generating review prompt for the provided code snippet.")
+    review_prompt = prompt_generator.generate_coding_style_prompt_with_diff(
+        added_code=request.added_code,
+        deleted_code=request.deleted_code,
+        full_function_code=request.full_function_code,
+    )
+    print("Review Prompt Generated:")
+    print(review_prompt)
 
     # if not similar_code:
     #     logger.info("No similar code snippets found.")

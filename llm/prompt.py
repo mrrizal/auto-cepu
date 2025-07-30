@@ -5,13 +5,47 @@ class PromptGenerator:
     def __init__(self):
         self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
 
-    def generate_coding_style_prompt(self, code_snippet: str) -> str:
-        prompt = f"""## Instruction
-{self.base_header}
+    def generate_coding_style_prompt_with_diff(
+        self,
+        added_code: list,
+        deleted_code: list,
+        full_function_code: str = ""
+    ) -> str:
+        """
+        Generate a prompt to review code changes using added and deleted code context.
+        """
+        added_code_str = "\n".join(chunk.code for chunk in added_code).strip()
+        deleted_code_str = "\n".join(chunk.code for chunk in deleted_code).strip()
 
-## Code Snippet
+        full_code_block = f"```python\n{full_function_code.strip()}\n```" if full_function_code else "N/A"
+
+        header = (
+            "You are an expert Python code reviewer analyzing a code change (diff) in a pull request. "
+            "Your task is to evaluate the added and deleted code in context, checking for behavior changes, regressions, and quality improvements."
+        )
+        prompt = f"""## Instruction
+{header}
+
+- Whether the **added code improves or regresses** the logic of the deleted code
+- Whether the **intent of the deleted code is preserved or broken**
+- The **quality** of the new code (style, naming, structure, readability)
+- Whether any logic or behavior was **accidentally removed or degraded**
+- Opportunities to **simplify, refactor, or improve** the new implementation
+- Any introduced **security, performance, or error-handling concerns**
+
+
+## Full Function Context
+{full_code_block}
+
+
+## 🔼 Added Code
 ```python
-{code_snippet.strip()}
+{added_code_str}
+```
+
+## 🔽 Deleted Code
+```python
+{deleted_code_str}
 ```
 
 ## Analysis Areas
@@ -50,8 +84,10 @@ Use the following GitHub markdown format for your response:
 - Focus on the most impactful improvements first
 - Consider maintainability and readability
 - Keep feedback concise but thorough
-- Use GitHub markdown formatting with appropriate emojis and tables"""
-        return prompt
+- Use GitHub markdown formatting with appropriate emojis and tables
+"""
+        return prompt.strip()
+
 
     def extract_similar_snippets(self, similar_codes: dict) -> str:
         result = ""
