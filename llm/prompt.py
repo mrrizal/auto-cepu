@@ -15,7 +15,12 @@ class PromptGenerator:
         Generate a prompt to review code changes using added and deleted code context.
         """
         added_code_str = "\n".join(chunk.code for chunk in added_code).strip()
+        if not added_code_str:
+            added_code_str = "No added code."
+
         deleted_code_str = "\n".join(chunk.code for chunk in deleted_code).strip()
+        if not deleted_code_str:
+            deleted_code_str = "No deleted code."
 
         full_code_block = f"```python\n{full_function_code.strip()}\n```" if full_function_code else "N/A"
 
