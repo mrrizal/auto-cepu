@@ -99,7 +99,6 @@ async def review_code(
     # except SyntaxError:
     #     similar_code = []
 
-    print(request.added_code)
     logger.info("Generating review prompt for the provided code snippet.")
     review_prompt = prompt_generator.generate_coding_style_prompt_with_diff(
         added_code=request.added_code,

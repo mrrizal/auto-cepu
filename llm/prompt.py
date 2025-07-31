@@ -1,242 +1,448 @@
 import textwrap
+from typing import List, Dict, Any, Optional
+
+
+class CodeChunk:
+    """Represents a code chunk with metadata."""
+    def __init__(self, code: str, start_line: int, end_line: int, line_count: int):
+        self.code = code
+        self.start_line = start_line
+        self.end_line = end_line
+        self.line_count = line_count
 
 
 class PromptGenerator:
     def __init__(self):
         self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
 
+    def _format_code_chunks(self, code_chunks: List[Dict[str, Any]], chunk_type: str = "code") -> str:
+        """Format code chunks with line number context."""
+        if not code_chunks:
+            return f"No {chunk_type} changes."
+
+        formatted_chunks = []
+        for i, chunk in enumerate(code_chunks, 1):
+            code = chunk.code.strip()
+            start_line = chunk.start_line
+            end_line = chunk.end_line
+
+            chunk_header = f"### {chunk_type.title()} Block {i} (Lines {start_line}-{end_line})"
+            chunk_content = f"```python\n{code}\n```"
+            formatted_chunks.append(f"{chunk_header}\n{chunk_content}")
+
+        return "\n\n".join(formatted_chunks)
+
+    def _extract_change_context(self, added_code: List[Dict], deleted_code: List[Dict]) -> Dict[str, Any]:
+        """Extract meaningful context from code changes."""
+        context = {
+            'total_added_lines': sum(chunk.line_count for chunk in added_code),
+            'total_deleted_lines': sum(chunk.line_count for chunk in deleted_code),
+            'change_type': 'modification',
+            'complexity_change': 'unknown',
+            'line_ranges': {
+                'added': [(chunk.start_line, chunk.end_line) for chunk in added_code],
+                'deleted': [(chunk.start_line, chunk.end_line) for chunk in deleted_code]
+            }
+        }
+
+        # Determine change type
+        if not deleted_code and added_code:
+            context['change_type'] = 'addition'
+        elif deleted_code and not added_code:
+            context['change_type'] = 'deletion'
+        elif len(added_code) > len(deleted_code):
+            context['change_type'] = 'expansion'
+        elif len(added_code) < len(deleted_code):
+            context['change_type'] = 'reduction'
+
+        # Assess complexity change
+        if context['total_added_lines'] > context['total_deleted_lines'] * 1.5:
+            context['complexity_change'] = 'increased'
+        elif context['total_added_lines'] < context['total_deleted_lines'] * 0.5:
+            context['complexity_change'] = 'decreased'
+        else:
+            context['complexity_change'] = 'maintained'
+
+        return context
+
     def generate_coding_style_prompt_with_diff(
         self,
-        added_code: list,
-        deleted_code: list,
-        full_function_code: str = ""
+        added_code: List[Dict[str, Any]],
+        deleted_code: List[Dict[str, Any]],
+        full_function_code: str = "",
+        function_name: str = "",
+        file_path: str = ""
     ) -> str:
         """
-        Generate a prompt to review code changes using added and deleted code context.
+        Generate an enhanced prompt for code review using diff analysis.
         """
-        added_code_str = "\n".join(chunk.code for chunk in added_code).strip()
-        if not added_code_str:
-            added_code_str = "No added code."
+        # Extract change context
+        context = self._extract_change_context(added_code, deleted_code)
 
-        deleted_code_str = "\n".join(chunk.code for chunk in deleted_code).strip()
-        if not deleted_code_str:
-            deleted_code_str = "No deleted code."
+        # Format code sections
+        added_section = self._format_code_chunks(added_code, "Added")
+        deleted_section = self._format_code_chunks(deleted_code, "Deleted")
 
-        full_code_block = f"```python\n{full_function_code.strip()}\n```" if full_function_code else "N/A"
+        # Format full function context
+        full_code_block = f"```python\n{full_function_code.strip()}\n```" if full_function_code else "Full function context not available."
 
-        header = (
-            "You are an expert Python code reviewer analyzing a code change (diff) in a pull request. "
-            "Your task is to evaluate the added and deleted code in context, checking for behavior changes, regressions, and quality improvements."
-        )
-        prompt = f"""## Instruction
-{header}
+        # Create context summary
+        context_summary = f"""
+**Change Summary:**
+- **Type:** {context['change_type'].title()}
+- **Lines Added:** {context['total_added_lines']}
+- **Lines Deleted:** {context['total_deleted_lines']}
+- **Complexity:** {context['complexity_change'].title()}
+- **Function:** `{function_name or 'Unknown'}`
+- **File:** `{file_path or 'Unknown'}`
+        """.strip()
 
-- Whether the **added code improves or regresses** the logic of the deleted code
-- Whether the **intent of the deleted code is preserved or broken**
-- The **quality** of the new code (style, naming, structure, readability)
-- Whether any logic or behavior was **accidentally removed or degraded**
-- Opportunities to **simplify, refactor, or improve** the new implementation
-- Any introduced **security, performance, or error-handling concerns**
+        prompt = f"""# 🔍 Code Review Analysis
 
+## 📋 Change Context
+{context_summary}
 
-## Full Function Context
+## 🎯 Review Objectives
+You are analyzing a code change in a pull request. Focus on:
+
+1. **Behavioral Impact** - Does the change preserve, improve, or break existing functionality?
+2. **Code Quality** - Is the new code better structured, more readable, and maintainable?
+3. **Logic Integrity** - Are there any logical errors or edge cases introduced?
+4. **Best Practices** - Does the code follow Python conventions and SOLID principles?
+5. **Performance Impact** - Any potential performance improvements or regressions?
+
+## 📄 Full Function Context
 {full_code_block}
 
+## 🟢 {added_section.split('###')[0] if '###' in added_section else 'Added Code'}
+{added_section}
 
-## 🔼 Added Code
-```python
-{added_code_str}
-```
+## 🔴 {deleted_section.split('###')[0] if '###' in deleted_section else 'Deleted Code'}
+{deleted_section}
 
-## 🔽 Deleted Code
-```python
-{deleted_code_str}
-```
+## 🔍 Analysis Framework
 
-## Analysis Areas
-1. **Naming & Style**: Variable/function names, PEP 8 compliance
-2. **Code Structure**: DRY principles, complexity, readability
-3. **Design Patterns**: Appropriate pattern usage or missed opportunities
-4. **SOLID Principles**: SRP, OCP, LSP, ISP, DIP violations
-5. **Performance**: Potential bottlenecks or inefficiencies
-6. **Error Handling**: Exception handling and edge cases
-7. **Security**: Potential security vulnerabilities
+### Code Quality Dimensions
+| Dimension | Focus Areas |
+|-----------|-------------|
+| **Structure** | Organization, modularity, separation of concerns |
+| **Readability** | Variable names, comments, code clarity |
+| **Performance** | Efficiency, resource usage, scalability |
+| **Security** | Input validation, error handling, vulnerabilities |
+| **Maintainability** | Code complexity, documentation, testability |
 
-## Expected Output Format
-Use the following GitHub markdown format for your response:
+## 📊 Expected Response Format
 
-### 🐛 Issues Found
-- **[Category]** - [Specific issue with line reference if applicable]
-- **[Category]** - [Specific issue with line reference if applicable]
+### 🔄 Change Analysis
+**Intent Preservation:** `[PRESERVED/IMPROVED/BROKEN/UNCLEAR]`
+**Logic Quality:** `[IMPROVED/MAINTAINED/DEGRADED]`
+**Key Changes:**
+- [Describe the main functional changes]
+- [Highlight any behavioral differences]
 
-### 💡 Recommendations
-- [Specific actionable improvement]
-- [Refactoring suggestion with brief example if needed]
+### 🐛 Issues Identified
+| Severity | Issue | Line Reference | Impact |
+|----------|-------|----------------|---------|
+| 🔴 Critical | [Issue description] | [Line range] | [Impact description] |
+| 🟡 Major | [Issue description] | [Line range] | [Impact description] |
+| 🟢 Minor | [Issue description] | [Line range] | [Impact description] |
 
-### 📊 Severity Assessment
-| Severity | Count | Description |
-|----------|-------|-------------|
-| 🔴 Critical | [Count] | Security vulnerabilities, logic errors |
-| 🟡 Major | [Count] | SOLID violations, performance issues |
-| 🟢 Minor | [Count] | Style improvements, naming conventions |
+### 💡 Actionable Recommendations
+1. **[Priority]** - [Specific improvement with code example if needed]
+2. **[Priority]** - [Specific improvement with code example if needed]
+3. **[Priority]** - [Specific improvement with code example if needed]
 
-### 🎯 Overall Rating
-**Rating:** `[POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]`
+### 📈 Quality Assessment
+| Metric | Before | After | Change |
+|--------|--------|--------|---------|
+| **Readability** | [Score/Rating] | [Score/Rating] | [↑↓→] |
+| **Complexity** | [Score/Rating] | [Score/Rating] | [↑↓→] |
+| **Maintainability** | [Score/Rating] | [Score/Rating] | [↑↓→] |
 
-## Guidelines
-- Be specific about line numbers when possible
-- Provide actionable suggestions, not just criticism
-- Focus on the most impactful improvements first
-- Consider maintainability and readability
-- Keep feedback concise but thorough
-- Use GitHub markdown formatting with appropriate emojis and tables
+### 🎯 Final Verdict
+**Overall Rating:** `[EXCELLENT/GOOD/ACCEPTABLE/NEEDS_IMPROVEMENT/POOR]`
+**Merge Recommendation:** `[APPROVE/REQUEST_CHANGES/NEEDS_DISCUSSION]`
+**Confidence Level:** `[HIGH/MEDIUM/LOW]`
+
+---
+> 💡 **Tip:** Focus on the most impactful issues first. Provide specific, actionable feedback rather than generic observations.
 """
         return prompt.strip()
 
+    def extract_similar_snippets(self, similar_codes: List[Dict[str, Any]]) -> str:
+        """Extract and format similar code snippets with better context."""
+        if not similar_codes:
+            return "No similar code found in the codebase."
 
-    def extract_similar_snippets(self, similar_codes: dict) -> str:
-        result = ""
-        for counter, similar_code in enumerate(similar_codes):
-            result += f"#### Code {counter + 1}\n"
-            doc = similar_code['code']
-            if len(doc) > 1000:
-                doc = doc[:1000] + "..."
-            result += f"```python\n{doc.strip()}\n```\n\n"
+        result_parts = []
+        for counter, similar_code in enumerate(similar_codes, 1):
+            file_path = similar_code.get('file_path', 'Unknown file')
+            similarity_score = similar_code.get('similarity_score', 'N/A')
+            code = similar_code.get('code', '')
 
-        return result.strip()
+            # Truncate long code snippets
+            if len(code) > 800:
+                code = code[:800] + "\n... [truncated]"
 
-    def generate_code_duplication_check_prompt(self, code_snippet: str, similar_codes: dict) -> str:
+            snippet_header = f"#### Reference #{counter}"
+            if file_path != 'Unknown file':
+                snippet_header += f" - `{file_path}`"
+            if similarity_score != 'N/A':
+                snippet_header += f" (Similarity: {similarity_score}%)"
+
+            code_block = f"```python\n{code.strip()}\n```"
+            result_parts.append(f"{snippet_header}\n{code_block}")
+
+        return "\n\n".join(result_parts)
+
+    def generate_code_duplication_check_prompt(
+        self,
+        code_snippet: str,
+        similar_codes: List[Dict[str, Any]],
+        function_name: str = "",
+        file_path: str = ""
+    ) -> str:
+        """Generate an enhanced duplication analysis prompt."""
         if not code_snippet.strip():
             return ""
 
-        similar_code = self.extract_similar_snippets(similar_codes)
-        if not similar_code:
+        similar_code_section = self.extract_similar_snippets(similar_codes)
+        if not similar_code_section or "No similar code found" in similar_code_section:
             return ""
 
-        prompt = f"""## Code Duplication Analysis
+        context_info = f"**Function:** `{function_name}`\n**File:** `{file_path}`" if function_name and file_path else ""
 
-You are a Python code reviewer AI. Analyze the target code for duplication and quality issues.
+        prompt = f"""# 🔍 Code Duplication Analysis
 
-### 🎯 Target Code (from current PR)
+## 🎯 Target Code Analysis
+{context_info}
+
+### Current Implementation
 ```python
 {code_snippet.strip()}
 ```
 
-### 📚 Reference Code List (existing codebase)
-{similar_code}
+## 📚 Similar Code References
+{similar_code_section}
 
-## Analysis Required
-1. **Duplication Check**: Compare target code with each reference code
-2. **Code Quality**: Identify potential issues in target code
-3. **Recommendations**: Suggest specific improvements
+## 🔍 Analysis Requirements
 
-## Expected Output Format
-Use the following GitHub markdown format for your response:
+### Duplication Assessment Criteria
+| Similarity Level | Threshold | Action Required |
+|------------------|-----------|-----------------|
+| **Duplicate** | >90% | Immediate refactoring needed |
+| **High Similarity** | 70-90% | Consider consolidation |
+| **Similar Pattern** | 50-70% | Review for common patterns |
+| **Different** | <50% | No action needed |
 
-### 🔍 Similarity Analysis
-| Reference | Status | Similarity | Reason |
-|-----------|--------|------------|---------|
-| #1 | `[DUPLICATE/SIMILAR/DIFFERENT]` | X% | [brief explanation] |
-| #2 | `[DUPLICATE/SIMILAR/DIFFERENT]` | X% | [brief explanation] |
+### Evaluation Dimensions
+1. **Functional Logic** - Core algorithm similarity
+2. **Structural Pattern** - Code organization and flow
+3. **Intent Alignment** - Purpose and responsibility overlap
+4. **Refactoring Potential** - Opportunities for consolidation
 
-### 🐛 Issues Found
-- [List specific issues: logic errors, performance, complexity, etc.]
+## 📊 Expected Analysis Format
 
-### 💡 Recommendations
-- [Specific actionable suggestions]
-- [Refactoring suggestions if duplication found]
+### 🔍 Similarity Matrix
+| Reference | Functional | Structural | Intent | Overall | Status |
+|-----------|------------|------------|---------|---------|---------|
+| #1 | XX% | XX% | XX% | XX% | `[STATUS]` |
+| #2 | XX% | XX% | XX% | XX% | `[STATUS]` |
 
-### 📋 Summary
-**Overall Status:** `[NEEDS_REFACTORING/ACCEPTABLE/GOOD]`
+### 📈 Duplication Assessment
+**Primary Concern:** `[LOGIC_DUPLICATION/PATTERN_REPETITION/BOILERPLATE/NONE]`
+**Risk Level:** `[HIGH/MEDIUM/LOW]`
+**Refactoring Complexity:** `[SIMPLE/MODERATE/COMPLEX]`
 
-## Guidelines
-- **DUPLICATE**: >90% similar logic, same functionality
-- **SIMILAR**: 70-90% similar, shared patterns but different purpose
-- **DIFFERENT**: <70% similar
-- Focus on logic similarity, not variable names
-- Be concise but specific
-- Prioritize actionable feedback
-- Use GitHub markdown formatting with tables and badges
+### 🐛 Quality Issues
+- **Code Structure:** [Issues with organization, complexity]
+- **Naming Conventions:** [Variable/function naming problems]
+- **Error Handling:** [Missing or inadequate error handling]
+- **Performance:** [Potential bottlenecks or inefficiencies]
 
-### Example Analysis
-**Target:** `def calculate_total(items): return sum(item.price for item in items)`
-**Reference:** `def get_sum(products): return sum(p.cost for p in products)`
+### 💡 Consolidation Recommendations
+1. **[Priority Level]** - [Specific refactoring suggestion]
+   ```python
+   # Example improvement
+   [code example if applicable]
+   ```
+2. **[Priority Level]** - [Specific improvement]
 
-| Reference | Status | Similarity | Reason |
-|-----------|--------|------------|---------|
-| #1 | `SIMILAR` | 85% | Same logic pattern, different variable names and attribute names |
+### 🎯 Action Plan
+| Priority | Action | Effort | Impact |
+|----------|--------|--------|--------|
+| P1 | [High priority action] | [Low/Med/High] | [Description] |
+| P2 | [Medium priority action] | [Low/Med/High] | [Description] |
 
-**Recommendations:**
-- Consider consolidating similar functions
-- Use consistent naming conventions
+### 📋 Final Recommendation
+**Status:** `[NEEDS_IMMEDIATE_REFACTORING/CONSIDER_REFACTORING/ACCEPTABLE/GOOD]`
+**Next Steps:** [Specific actionable recommendations]
+
+---
+> 🔧 **Note:** Focus on functional duplication over superficial similarities. Consider maintainability impact.
 """
         return prompt.strip()
 
-    def generate_summary_prompt(self, coding_style_result: str, duplication_check_result: str) -> str:
-        prompt = f"""## Code Review Summary Generation
+    def generate_summary_prompt(
+        self,
+        coding_style_result: str,
+        duplication_check_result: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Generate an enhanced summary prompt with better context integration."""
 
-You are a senior code review engineer. Synthesize the following two code analysis reports into a unified, actionable summary using GitHub markdown format.
+        context_section = ""
+        if context:
+            context_section = f"""
+## 📊 Change Context
+- **Function:** `{context.get('function_name', 'Unknown')}`
+- **File:** `{context.get('file_path', 'Unknown')}`
+- **Change Type:** {context.get('change_type', 'Unknown')}
+- **Lines Modified:** +{context.get('total_added_lines', 0)} -{context.get('total_deleted_lines', 0)}
+"""
 
-### Input Reports
+        prompt = f"""# 📋 Comprehensive Code Review Summary
 
-#### Duplication Analysis
-{duplication_check_result}
+You are a senior engineering lead conducting a final code review assessment. Synthesize the following analysis reports into a unified, executive-ready summary.
 
-#### Code Quality Analysis
+{context_section}
+
+## 📁 Input Analysis Reports
+
+### 🔄 Code Quality & Diff Analysis
 {coding_style_result}
 
-## Task Requirements
-1. **Consolidate findings** - Merge overlapping issues, avoid redundancy
-2. **Prioritize by impact** - Critical issues first, then major, then minor
-3. **Provide actionable recommendations** - Specific steps for improvement
-4. **Assess overall quality** - Final verdict on code readiness
+### 🔍 Duplication Analysis
+{duplication_check_result}
 
-## Expected Output Format
-Use the following GitHub markdown format for your response:
+## 🎯 Synthesis Requirements
 
-# 🔍 Code Review Summary
+1. **Consolidate Findings** - Merge overlapping issues, eliminate redundancy
+2. **Risk Assessment** - Evaluate impact on system stability and maintainability
+3. **Priority Classification** - Organize by business and technical impact
+4. **Action Planning** - Provide clear, prioritized remediation steps
+5. **Decision Support** - Give clear merge/hold recommendation
 
-## 🔴 Critical Issues (Must Fix)
-- [ ] [Issue with severity justification]
-- [ ] [Issue with severity justification]
+## 📊 Expected Summary Format
 
-## 🟡 Major Issues (Should Fix)
-- [ ] [Issue with impact explanation]
-- [ ] [Issue with impact explanation]
+# 🚨 Executive Code Review Summary
 
-## 🟢 Minor Issues (Nice to Have)
-- [ ] [Improvement suggestion]
-- [ ] [Improvement suggestion]
+## 🔴 Blocking Issues (Must Fix Before Merge)
+- [ ] **[Issue Category]** - [Specific issue with business/technical impact]
+  - **Impact:** [Risk to system/users/maintainability]
+  - **Action:** [Specific fix required]
+- [ ] **[Issue Category]** - [Specific issue with business/technical impact]
 
-## 🔄 Duplication Assessment
-| Metric | Value |
-|--------|-------|
-| **Status** | `[NO_DUPLICATES/MINOR_SIMILARITY/SIGNIFICANT_DUPLICATION]` |
-| **Details** | [Brief explanation of duplication findings] |
-| **Action** | [Specific refactoring recommendation if needed] |
+## 🟡 High Priority (Should Address Soon)
+- [ ] **[Issue Category]** - [Issue description with context]
+  - **Impact:** [Medium-term consequences]
+  - **Effort:** [Low/Medium/High]
+- [ ] **[Issue Category]** - [Issue description with context]
 
-## 📋 Recommended Actions
-1. **Priority 1:** [Prioritized action item]
-2. **Priority 2:** [Prioritized action item]
-3. **Priority 3:** [Prioritized action item]
+## 🟢 Enhancement Opportunities (Nice to Have)
+- [ ] **[Category]** - [Improvement suggestion]
+- [ ] **[Category]** - [Code quality enhancement]
 
-## 📊 Overall Assessment
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Code Quality** | `[POOR/NEEDS_IMPROVEMENT/ACCEPTABLE/GOOD/EXCELLENT]` | [Brief justification] |
-| **Ready for Merge** | `[YES/NO/WITH_CHANGES]` | [Brief justification] |
-| **Confidence** | `[HIGH/MEDIUM/LOW]` | [Brief justification] |
+## 📊 Risk Assessment Matrix
+| Risk Category | Level | Details | Mitigation |
+|---------------|-------|---------|------------|
+| **Security** | `[HIGH/MED/LOW]` | [Specific concerns] | [Required actions] |
+| **Performance** | `[HIGH/MED/LOW]` | [Potential impacts] | [Optimization steps] |
+| **Maintainability** | `[HIGH/MED/LOW]` | [Code quality issues] | [Refactoring needs] |
+| **Duplication** | `[HIGH/MED/LOW]` | [Redundancy level] | [Consolidation plan] |
+
+## 🔄 Code Duplication Status
+| Metric | Assessment | Action Required |
+|--------|------------|-----------------|
+| **Duplication Level** | `[NONE/LOW/MODERATE/HIGH]` | [Specific steps if needed] |
+| **Refactoring Priority** | `[P0/P1/P2/P3]` | [Timeline recommendation] |
+| **Complexity Impact** | `[POSITIVE/NEUTRAL/NEGATIVE]` | [Justification] |
+
+## 📈 Quality Metrics Summary
+| Dimension | Before | After | Change | Goal |
+|-----------|--------|--------|---------|------|
+| **Code Quality** | [Rating] | [Rating] | [↑↓→] | [Target] |
+| **Test Coverage** | [%] | [%] | [↑↓→] | [Target] |
+| **Complexity** | [Score] | [Score] | [↑↓→] | [Target] |
+| **Maintainability** | [Score] | [Score] | [↑↓→] | [Target] |
+
+## 🎯 Final Recommendations
+
+### Immediate Actions (Next 24 Hours)
+1. **[Action]** - [Specific task with owner if known]
+2. **[Action]** - [Specific task with owner if known]
+
+### Short-term Actions (Next Sprint)
+1. **[Action]** - [Specific task with effort estimate]
+2. **[Action]** - [Specific task with effort estimate]
+
+### Long-term Improvements (Next Quarter)
+1. **[Action]** - [Strategic improvement]
+2. **[Action]** - [Process enhancement]
+
+## ✅ Merge Decision
+| Criterion | Assessment | Status |
+|-----------|------------|---------|
+| **Functionality** | [Working/Broken/Partial] | `[✅/❌/⚠️]` |
+| **Code Quality** | [Excellent/Good/Acceptable/Poor] | `[✅/❌/⚠️]` |
+| **Security** | [Secure/Minor Issues/Major Issues] | `[✅/❌/⚠️]` |
+| **Performance** | [Improved/Same/Degraded] | `[✅/❌/⚠️]` |
+| **Test Coverage** | [Adequate/Insufficient] | `[✅/❌/⚠️]` |
+
+### 🚦 Final Verdict
+**Recommendation:** `[APPROVE/APPROVE_WITH_COMMENTS/REQUEST_CHANGES/HOLD]`
+**Confidence Level:** `[HIGH/MEDIUM/LOW]`
+**Risk Level:** `[LOW/MEDIUM/HIGH]`
+
+**Rationale:** [2-3 sentence justification for the decision]
 
 ---
-> **Note:** This review was generated automatically. Please address critical and major issues before merging.
+> 🤖 **Auto-generated Review** | Please address all blocking issues before proceeding with merge.
 
-## Guidelines for Response
-- Use GitHub markdown with emojis, tables, and checkboxes
-- Be concise but comprehensive
-- Focus on actionable feedback
-- Justify severity levels with brief explanations
-- Avoid repeating similar points from both reports
-- Prioritize maintainability and readability concerns
-- Use appropriate status badges and formatting"""
-
+## 📋 Review Guidelines
+- Prioritize security and functionality issues
+- Consider long-term maintainability impact
+- Provide specific, actionable feedback
+- Balance perfectionism with delivery velocity
+- Focus on business value and user impact
+"""
         return prompt.strip()
+
+    def generate_contextual_review_prompt(
+        self,
+        payload_data: Dict[str, Any]
+    ) -> str:
+        """
+        Generate a comprehensive review prompt using the full payload context.
+        """
+        # Extract key information from payload
+        added_code = payload_data.get('added_code', [])
+        deleted_code = payload_data.get('deleted_code', [])
+        full_function_code = payload_data.get('full_function_code', '')
+        function_name = payload_data.get('function_name', '')
+        file_path = payload_data.get('file_path', '')
+        project_name = payload_data.get('project_name', '')
+        summary = payload_data.get('summary', {})
+
+        # Generate the main diff analysis prompt
+        main_prompt = self.generate_coding_style_prompt_with_diff(
+            added_code=added_code,
+            deleted_code=deleted_code,
+            full_function_code=full_function_code,
+            function_name=function_name,
+            file_path=file_path
+        )
+
+        # Add project context
+        project_context = f"""
+## 🏗️ Project Context
+- **Project:** `{project_name}`
+- **Total Lines Added:** {summary.get('total_added_lines', 0)}
+- **Total Lines Deleted:** {summary.get('total_deleted_lines', 0)}
+- **Modified Lines:** {len(summary.get('added_line_numbers', []))} additions, {len(summary.get('deleted_line_numbers', []))} deletions
+        """.strip()
+
+        # Combine with enhanced context
+        enhanced_prompt = f"{project_context}\n\n{main_prompt}"
+
+        return enhanced_prompt
