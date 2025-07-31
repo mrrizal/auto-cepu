@@ -50,6 +50,8 @@ class FunctionAnalysis(BaseModel):
 
 class CodeReviewRequest(BaseModel):
     file_path: str
+    project_name: str
+    file_path: str
     function_name: str
     function_location: FunctionLocation
     full_function_code: str
@@ -129,9 +131,6 @@ async def review_code(
     #             style_result['response'], duplication_result['response']
     #         )
     #     )
-    from pprint import pprint
-    request_data = request.dict()
-    pprint(request_data)
 
     duplication_result = None
     style_result = None
