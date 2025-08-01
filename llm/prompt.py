@@ -1,30 +1,73 @@
-import textwrap
 from typing import List, Dict, Any, Optional
-
-
-class CodeChunk:
-    """Represents a code chunk with metadata."""
-    def __init__(self, code: str, start_line: int, end_line: int, line_count: int):
-        self.code = code
-        self.start_line = start_line
-        self.end_line = end_line
-        self.line_count = line_count
+from llm.models import CodeBlock
 
 
 class PromptGenerator:
     def __init__(self):
         self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
 
+    def _preserve_indentation(self, code: str) -> str:
+        """
+        Clean code while preserving proper indentation.
+        Removes common leading whitespace and trailing whitespace.
+        """
+        if not code:
+            return code
+
+        # Split into lines
+        lines = code.splitlines()
+
+        # Remove empty lines from the beginning
+        while lines and not lines[0].strip():
+            lines.pop(0)
+
+        # Remove empty lines from the end
+        while lines and not lines[-1].strip():
+            lines.pop()
+
+        if not lines:
+            return ""
+
+        # Remove trailing whitespace from each line
+        lines = [line.rstrip() for line in lines]
+
+        # Find the minimum indentation of non-empty lines
+        non_empty_lines = [line for line in lines if line.strip()]
+        if not non_empty_lines:
+            return ""
+
+        min_indent = min(len(line) - len(line.lstrip()) for line in non_empty_lines)
+
+        # Remove the common leading whitespace
+        normalized_lines = []
+        for line in lines:
+            if line.strip():  # Non-empty line
+                normalized_lines.append(line[min_indent:])
+            else:  # Empty line
+                normalized_lines.append("")
+
+        return '\n'.join(normalized_lines)
+
     def _format_code_chunks(self, code_chunks: List[Dict[str, Any]], chunk_type: str = "code") -> str:
-        """Format code chunks with line number context."""
+        """Format code chunks with line number context while preserving indentation."""
         if not code_chunks:
             return f"No {chunk_type} changes."
 
         formatted_chunks = []
         for i, chunk in enumerate(code_chunks, 1):
-            code = chunk.code.strip()
-            start_line = chunk.start_line
-            end_line = chunk.end_line
+            # Handle both CodeChunk objects and dictionaries
+            if isinstance(chunk, CodeBlock):
+                code = chunk.code
+                start_line = chunk.start_line
+                end_line = chunk.end_line
+            else:
+                # Assume it's a dictionary
+                code = chunk.get('code', '')
+                start_line = chunk.get('start_line', 0)
+                end_line = chunk.get('end_line', 0)
+
+            # Preserve indentation by only stripping trailing whitespace and empty lines
+            code = self._preserve_indentation(code)
 
             chunk_header = f"### {chunk_type.title()} Block {i} (Lines {start_line}-{end_line})"
             chunk_content = f"```python\n{code}\n```"
@@ -34,14 +77,30 @@ class PromptGenerator:
 
     def _extract_change_context(self, added_code: List[Dict], deleted_code: List[Dict]) -> Dict[str, Any]:
         """Extract meaningful context from code changes."""
+        # Helper function to get line count from chunk
+        def get_line_count(chunk):
+            if isinstance(chunk, CodeBlock):
+                return chunk.line_count
+            elif isinstance(chunk, dict):
+                return chunk.get('line_count', len(chunk.get('code', '').split('\n')))
+            return 0
+
+        # Helper function to get line ranges
+        def get_line_range(chunk):
+            if isinstance(chunk, CodeBlock):
+                return (chunk.start_line, chunk.end_line)
+            elif isinstance(chunk, dict):
+                return (chunk.get('start_line', 0), chunk.get('end_line', 0))
+            return (0, 0)
+
         context = {
-            'total_added_lines': sum(chunk.line_count for chunk in added_code),
-            'total_deleted_lines': sum(chunk.line_count for chunk in deleted_code),
+            'total_added_lines': sum(get_line_count(chunk) for chunk in added_code),
+            'total_deleted_lines': sum(get_line_count(chunk) for chunk in deleted_code),
             'change_type': 'modification',
             'complexity_change': 'unknown',
             'line_ranges': {
-                'added': [(chunk.start_line, chunk.end_line) for chunk in added_code],
-                'deleted': [(chunk.start_line, chunk.end_line) for chunk in deleted_code]
+                'added': [get_line_range(chunk) for chunk in added_code],
+                'deleted': [get_line_range(chunk) for chunk in deleted_code]
             }
         }
 
@@ -83,8 +142,13 @@ class PromptGenerator:
         added_section = self._format_code_chunks(added_code, "Added")
         deleted_section = self._format_code_chunks(deleted_code, "Deleted")
 
-        # Format full function context
-        full_code_block = f"```python\n{full_function_code.strip()}\n```" if full_function_code else "Full function context not available."
+        # Format full function context with preserved indentation
+
+        if full_function_code:
+            preserved_code = self._preserve_indentation(full_function_code)
+            full_code_block = f"```python\n{preserved_code}\n```"
+        else:
+            full_code_block = "Full function context not available."
 
         # Create context summary
         context_summary = f"""
@@ -180,7 +244,8 @@ You are analyzing a code change in a pull request. Focus on:
             similarity_score = similar_code.get('similarity_score', 'N/A')
             code = similar_code.get('code', '')
 
-            # Truncate long code snippets
+            # Preserve indentation and truncate if needed
+            code = self._preserve_indentation(code)
             if len(code) > 800:
                 code = code[:800] + "\n... [truncated]"
 
@@ -190,7 +255,7 @@ You are analyzing a code change in a pull request. Focus on:
             if similarity_score != 'N/A':
                 snippet_header += f" (Similarity: {similarity_score}%)"
 
-            code_block = f"```python\n{code.strip()}\n```"
+            code_block = f"```python\n{code}\n```"
             result_parts.append(f"{snippet_header}\n{code_block}")
 
         return "\n\n".join(result_parts)
@@ -212,6 +277,9 @@ You are analyzing a code change in a pull request. Focus on:
 
         context_info = f"**Function:** `{function_name}`\n**File:** `{file_path}`" if function_name and file_path else ""
 
+        # Preserve indentation for the main code snippet
+        preserved_snippet = self._preserve_indentation(code_snippet)
+
         prompt = f"""# 🔍 Code Duplication Analysis
 
 ## 🎯 Target Code Analysis
@@ -219,7 +287,7 @@ You are analyzing a code change in a pull request. Focus on:
 
 ### Current Implementation
 ```python
-{code_snippet.strip()}
+{preserved_snippet}
 ```
 
 ## 📚 Similar Code References
