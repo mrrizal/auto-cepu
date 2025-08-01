@@ -42,19 +42,24 @@ async def review_code(
     prompt_generator: PromptGenerator = Depends(get_prompt_generator),
     code_reviewer: CodeReviewLLM = Depends(get_code_reviewer)
 ):
-    # code = request.code
-    # project_name = request.project_name
+    code = request.full_function_code
+    project_name = request.project_name
 
-    # indexing_service = get_indexing_service(project_name)
+    indexing_service = get_indexing_service(project_name)
 
-    # if not code.strip():
-    #     raise HTTPException(status_code=400, detail="Code snippet cannot be empty.")
+    if not code.strip():
+        raise HTTPException(status_code=400, detail="Code snippet cannot be empty.")
 
-    # try:
-    #     normalized_code = normalize_code(code)
-    #     similar_code = indexing_service.query_similar_code(normalized_code)
-    # except SyntaxError:
-    #     similar_code = []
+    duplication_result = None
+    style_result = None
+    summary = None
+    similar_code = []
+
+    try:
+        normalized_code = normalize_code(code)
+        similar_code = indexing_service.query_similar_code(normalized_code)
+    except SyntaxError:
+        similar_code = []
 
     logger.info("Generating review prompt for the provided code snippet.")
     review_prompt = prompt_generator.generate_coding_style_prompt_with_diff(
@@ -64,36 +69,29 @@ async def review_code(
         function_name=request.function_name,
         file_path=request.function_location,
     )
-    print("Review Prompt Generated:")
-    print(review_prompt)
 
-    # if not similar_code:
-    #     logger.info("No similar code snippets found.")
-    #     style_result = await code_reviewer.review(review_prompt)
-    #     duplication_result = None
-    # else:
-    #     logger.debug(f"Found {len(similar_code)} similar code snippets.")
-    #     duplicate_code_check_prompt = prompt_generator.\
-    #         generate_code_duplication_check_prompt(code, similar_code)
+    if not similar_code:
+        logger.info("No similar code snippets found.")
+        style_result = await code_reviewer.review(review_prompt)
+        duplication_result = None
+    else:
+        logger.debug(f"Found {len(similar_code)} similar code snippets.")
+        duplicate_code_check_prompt = prompt_generator.\
+            generate_code_duplication_check_prompt(code, similar_code)
 
-    #     duplication_result, style_result = await asyncio.gather(
-    #         code_reviewer.review(duplicate_code_check_prompt),
-    #         code_reviewer.review(review_prompt)
-    #     )
+        style_result, duplication_result = await asyncio.gather(
+            code_reviewer.review(review_prompt),
+            code_reviewer.review(duplicate_code_check_prompt)
+        )
 
-    # if not duplication_result:
-    #     summary = style_result
-    # else:
-    #     summary = await code_reviewer.review(
-    #         prompt_generator.generate_summary_prompt(
-    #             style_result['response'], duplication_result['response']
-    #         )
-    #     )
-
-    duplication_result = None
-    style_result = None
-    summary = None
-    similar_code = []
+    if not duplication_result:
+        summary = style_result
+    else:
+        summary = await code_reviewer.review(
+            prompt_generator.generate_summary_prompt(
+                style_result['response'], duplication_result['response']
+            )
+        )
 
     return CodeReviewResponse(
         duplication_review=duplication_result['response'] if duplication_result else "No duplication found.",
