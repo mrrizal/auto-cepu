@@ -2,515 +2,286 @@ from typing import List, Dict, Any, Optional
 from llm.models import CodeBlock
 
 
-class PromptGenerator:
+class CodeReviewPromptGenerator:
     def __init__(self):
-        self.base_header = "You are an expert Python code reviewer. Analyze the following code for quality issues and improvements."
+        pass
 
-    def _preserve_indentation(self, code: str) -> str:
-        """
-        Clean code while preserving proper indentation.
-        Removes common leading whitespace and trailing whitespace.
-        """
+    def _clean_code(self, code: str) -> str:
+        """Clean code while preserving indentation."""
         if not code:
             return code
 
-        # Split into lines
-        lines = code.splitlines()
-
-        # Remove empty lines from the beginning
-        while lines and not lines[0].strip():
-            lines.pop(0)
-
-        # Remove empty lines from the end
-        while lines and not lines[-1].strip():
-            lines.pop()
-
+        lines = code.strip().splitlines()
         if not lines:
             return ""
 
-        # Remove trailing whitespace from each line
-        lines = [line.rstrip() for line in lines]
-
-        # Find the minimum indentation of non-empty lines
+        # Remove common leading whitespace
         non_empty_lines = [line for line in lines if line.strip()]
         if not non_empty_lines:
             return ""
 
         min_indent = min(len(line) - len(line.lstrip()) for line in non_empty_lines)
 
-        # Remove the common leading whitespace
-        normalized_lines = []
+        cleaned_lines = []
         for line in lines:
-            if line.strip():  # Non-empty line
-                normalized_lines.append(line[min_indent:])
-            else:  # Empty line
-                normalized_lines.append("")
-
-        return '\n'.join(normalized_lines)
-
-    def _format_code_chunks(self, code_chunks: List[Dict[str, Any]], chunk_type: str = "code") -> str:
-        """Format code chunks with line number context while preserving indentation."""
-        if not code_chunks:
-            return f"No {chunk_type} changes."
-
-        formatted_chunks = []
-        for i, chunk in enumerate(code_chunks, 1):
-            # Handle both CodeChunk objects and dictionaries
-            if isinstance(chunk, CodeBlock):
-                code = chunk.code
-                start_line = chunk.start_line
-                end_line = chunk.end_line
+            if line.strip():
+                cleaned_lines.append(line[min_indent:])
             else:
-                # Assume it's a dictionary
-                code = chunk.get('code', '')
-                start_line = chunk.get('start_line', 0)
-                end_line = chunk.get('end_line', 0)
+                cleaned_lines.append("")
 
-            # Preserve indentation by only stripping trailing whitespace and empty lines
-            code = self._preserve_indentation(code)
+        return '\n'.join(cleaned_lines)
 
-            chunk_header = f"### {chunk_type.title()} Block {i} (Lines {start_line}-{end_line})"
-            chunk_content = f"```python\n{code}\n```"
-            formatted_chunks.append(f"{chunk_header}\n{chunk_content}")
-
-        return "\n\n".join(formatted_chunks)
-
-    def _extract_change_context(self, added_code: List[Dict], deleted_code: List[Dict]) -> Dict[str, Any]:
-        """Extract meaningful context from code changes."""
-        # Helper function to get line count from chunk
-        def get_line_count(chunk):
-            if isinstance(chunk, CodeBlock):
-                return chunk.line_count
-            elif isinstance(chunk, dict):
-                return chunk.get('line_count', len(chunk.get('code', '').split('\n')))
-            return 0
-
-        # Helper function to get line ranges
-        def get_line_range(chunk):
-            if isinstance(chunk, CodeBlock):
-                return (chunk.start_line, chunk.end_line)
-            elif isinstance(chunk, dict):
-                return (chunk.get('start_line', 0), chunk.get('end_line', 0))
-            return (0, 0)
-
-        context = {
-            'total_added_lines': sum(get_line_count(chunk) for chunk in added_code),
-            'total_deleted_lines': sum(get_line_count(chunk) for chunk in deleted_code),
-            'change_type': 'modification',
-            'complexity_change': 'unknown',
-            'line_ranges': {
-                'added': [get_line_range(chunk) for chunk in added_code],
-                'deleted': [get_line_range(chunk) for chunk in deleted_code]
-            }
-        }
-
-        # Determine change type
-        if not deleted_code and added_code:
-            context['change_type'] = 'addition'
-        elif deleted_code and not added_code:
-            context['change_type'] = 'deletion'
-        elif len(added_code) > len(deleted_code):
-            context['change_type'] = 'expansion'
-        elif len(added_code) < len(deleted_code):
-            context['change_type'] = 'reduction'
-
-        # Assess complexity change
-        if context['total_added_lines'] > context['total_deleted_lines'] * 1.5:
-            context['complexity_change'] = 'increased'
-        elif context['total_added_lines'] < context['total_deleted_lines'] * 0.5:
-            context['complexity_change'] = 'decreased'
-        else:
-            context['complexity_change'] = 'maintained'
-
-        return context
-
-    def generate_coding_style_prompt_with_diff(
+    def generate_style_review_prompt(
         self,
         added_code: List[Dict[str, Any]],
         deleted_code: List[Dict[str, Any]],
         full_function_code: str = "",
-        function_name: str = "",
-        file_path: str = ""
+        function_name: str = ""
     ) -> str:
-        """
-        Generate an enhanced prompt for code review using diff analysis.
-        """
-        # Extract change context
-        context = self._extract_change_context(added_code, deleted_code)
+        """Generate a concise code review prompt."""
 
-        # Format code sections
-        added_section = self._format_code_chunks(added_code, "Added")
-        deleted_section = self._format_code_chunks(deleted_code, "Deleted")
+        # Format added code
+        added_blocks = []
+        for i, chunk in enumerate(added_code, 1):
+            if isinstance(chunk, CodeBlock):
+                code = chunk.code
+            else:
+                code = chunk.get('code', '')
 
-        # Format full function context with preserved indentation
+            clean_code = self._clean_code(code)
+            if clean_code:
+                added_blocks.append(f"Added block {i}:\n```python\n{clean_code}\n```")
 
+        # Format deleted code
+        deleted_blocks = []
+        for i, chunk in enumerate(deleted_code, 1):
+            if isinstance(chunk, CodeBlock):
+                code = chunk.code
+            else:
+                code = chunk.get('code', '')
+
+            clean_code = self._clean_code(code)
+            if clean_code:
+                deleted_blocks.append(f"Deleted block {i}:\n```python\n{clean_code}\n```")
+
+        # Format full function
+        full_code_section = ""
         if full_function_code:
-            preserved_code = self._preserve_indentation(full_function_code)
-            full_code_block = f"```python\n{preserved_code}\n```"
-        else:
-            full_code_block = "Full function context not available."
+            clean_full = self._clean_code(full_function_code)
+            full_code_section = f"\nFull function:\n```python\n{clean_full}\n```"
 
-        # Create context summary
-        context_summary = f"""
-**Change Summary:**
-- **Type:** {context['change_type'].title()}
-- **Lines Added:** {context['total_added_lines']}
-- **Lines Deleted:** {context['total_deleted_lines']}
-- **Complexity:** {context['complexity_change'].title()}
-- **Function:** `{function_name or 'Unknown'}`
-- **File:** `{file_path or 'Unknown'}`
-        """.strip()
+        # Build the prompt
+        prompt = f"""Review this Python code change for function `{function_name}`:
 
-        prompt = f"""# 🔍 Code Review Analysis
+{full_code_section}
 
-## 📋 Change Context
-{context_summary}
+Changes made:
+{chr(10).join(added_blocks) if added_blocks else "No code added."}
 
-## 🎯 Review Objectives
-You are analyzing a code change in a pull request. Focus on:
+{chr(10).join(deleted_blocks) if deleted_blocks else "No code deleted."}
 
-1. **Behavioral Impact** - Does the change preserve, improve, or break existing functionality?
-2. **Code Quality** - Is the new code better structured, more readable, and maintainable?
-3. **Logic Integrity** - Are there any logical errors or edge cases introduced?
-4. **Best Practices** - Does the code follow Python conventions and SOLID principles?
-5. **Performance Impact** - Any potential performance improvements or regressions?
+Please respond in this format:
 
-## 📄 Full Function Context
-{full_code_block}
+SUMMARY: [What this change does in 1-2 sentences]
 
-## 🟢 {added_section.split('###')[0] if '###' in added_section else 'Added Code'}
-{added_section}
+ISSUES: [List any bugs, problems, or concerns. Write "None found" if no issues]
 
-## 🔴 {deleted_section.split('###')[0] if '###' in deleted_section else 'Deleted Code'}
-{deleted_section}
+IMPROVEMENTS: [Suggest code quality improvements. Write "None needed" if code is good]
 
-## 🔍 Analysis Framework
+DECISION: [Yes/No] - [Brief reason why]
 
-### Code Quality Dimensions
-| Dimension | Focus Areas |
-|-----------|-------------|
-| **Structure** | Organization, modularity, separation of concerns |
-| **Readability** | Variable names, comments, code clarity |
-| **Performance** | Efficiency, resource usage, scalability |
-| **Security** | Input validation, error handling, vulnerabilities |
-| **Maintainability** | Code complexity, documentation, testability |
+Keep each section concise and actionable."""
 
-## 📊 Expected Response Format
-
-### 🔄 Change Analysis
-**Intent Preservation:** `[PRESERVED/IMPROVED/BROKEN/UNCLEAR]`
-**Logic Quality:** `[IMPROVED/MAINTAINED/DEGRADED]`
-**Key Changes:**
-- [Describe the main functional changes]
-- [Highlight any behavioral differences]
-
-### 🐛 Issues Identified
-| Severity | Issue | Line Reference | Impact |
-|----------|-------|----------------|---------|
-| 🔴 Critical | [Issue description] | [Line range] | [Impact description] |
-| 🟡 Major | [Issue description] | [Line range] | [Impact description] |
-| 🟢 Minor | [Issue description] | [Line range] | [Impact description] |
-
-### 💡 Actionable Recommendations
-1. **[Priority]** - [Specific improvement with code example if needed]
-2. **[Priority]** - [Specific improvement with code example if needed]
-3. **[Priority]** - [Specific improvement with code example if needed]
-
-### 📈 Quality Assessment
-| Metric | Before | After | Change |
-|--------|--------|--------|---------|
-| **Readability** | [Score/Rating] | [Score/Rating] | [↑↓→] |
-| **Complexity** | [Score/Rating] | [Score/Rating] | [↑↓→] |
-| **Maintainability** | [Score/Rating] | [Score/Rating] | [↑↓→] |
-
-### 🎯 Final Verdict
-**Overall Rating:** `[EXCELLENT/GOOD/ACCEPTABLE/NEEDS_IMPROVEMENT/POOR]`
-**Merge Recommendation:** `[APPROVE/REQUEST_CHANGES/NEEDS_DISCUSSION]`
-**Confidence Level:** `[HIGH/MEDIUM/LOW]`
-
----
-> 💡 **Tip:** Focus on the most impactful issues first. Provide specific, actionable feedback rather than generic observations.
-"""
         return prompt.strip()
 
-    def extract_similar_snippets(self, similar_codes: List[Dict[str, Any]]) -> str:
-        """Extract and format similar code snippets with better context."""
-        if not similar_codes:
-            return "No similar code found in the codebase."
-
-        result_parts = []
-        for counter, similar_code in enumerate(similar_codes, 1):
-            file_path = similar_code.get('file_path', 'Unknown file')
-            similarity_score = similar_code.get('similarity_score', 'N/A')
-            code = similar_code.get('code', '')
-
-            # Preserve indentation and truncate if needed
-            code = self._preserve_indentation(code)
-            if len(code) > 800:
-                code = code[:800] + "\n... [truncated]"
-
-            snippet_header = f"#### Reference #{counter}"
-            if file_path != 'Unknown file':
-                snippet_header += f" - `{file_path}`"
-            if similarity_score != 'N/A':
-                snippet_header += f" (Similarity: {similarity_score}%)"
-
-            code_block = f"```python\n{code}\n```"
-            result_parts.append(f"{snippet_header}\n{code_block}")
-
-        return "\n\n".join(result_parts)
-
-    def generate_code_duplication_check_prompt(
+    def generate_duplication_check_prompt(
         self,
         code_snippet: str,
         similar_codes: List[Dict[str, Any]],
-        function_name: str = "",
-        file_path: str = ""
+        function_name: str = ""
     ) -> str:
-        """Generate an enhanced duplication analysis prompt."""
-        if not code_snippet.strip():
+        """Generate a simple duplication check prompt."""
+
+        if not code_snippet.strip() or not similar_codes:
             return ""
 
-        similar_code_section = self.extract_similar_snippets(similar_codes)
-        if not similar_code_section or "No similar code found" in similar_code_section:
-            return ""
+        clean_snippet = self._clean_code(code_snippet)
 
-        context_info = f"**Function:** `{function_name}`\n**File:** `{file_path}`" if function_name and file_path else ""
+        # Format similar code
+        similar_sections = []
+        for i, similar in enumerate(similar_codes[:3], 1):  # Limit to 3 examples
+            file_path = similar.get('file_path', f'file_{i}')
+            code = similar.get('code', '')
+            similarity = similar.get('similarity_score', 'N/A')
 
-        # Preserve indentation for the main code snippet
-        preserved_snippet = self._preserve_indentation(code_snippet)
+            clean_similar = self._clean_code(code)
+            if len(clean_similar) > 500:  # Truncate long code
+                clean_similar = clean_similar[:500] + "\n... [truncated]"
 
-        prompt = f"""# 🔍 Code Duplication Analysis
+            similar_sections.append(f"Similar code {i} (from {file_path}, {similarity}% similar):\n```python\n{clean_similar}\n```")
 
-## 🎯 Target Code Analysis
-{context_info}
+        prompt = f"""Check if this code is duplicated in the codebase:
 
-### Current Implementation
+Current code from `{function_name}`:
 ```python
-{preserved_snippet}
+{clean_snippet}
 ```
 
-## 📚 Similar Code References
-{similar_code_section}
+Found similar code:
+{chr(10).join(similar_sections)}
 
-## 🔍 Analysis Requirements
+Respond in this format:
 
-### Duplication Assessment Criteria
-| Similarity Level | Threshold | Action Required |
-|------------------|-----------|-----------------|
-| **Duplicate** | >90% | Immediate refactoring needed |
-| **High Similarity** | 70-90% | Consider consolidation |
-| **Similar Pattern** | 50-70% | Review for common patterns |
-| **Different** | <50% | No action needed |
+DUPLICATION LEVEL: [None/Low/Medium/High]
 
-### Evaluation Dimensions
-1. **Functional Logic** - Core algorithm similarity
-2. **Structural Pattern** - Code organization and flow
-3. **Intent Alignment** - Purpose and responsibility overlap
-4. **Refactoring Potential** - Opportunities for consolidation
+ANALYSIS: [Are these actual duplicates or just similar patterns?]
 
-## 📊 Expected Analysis Format
+RECOMMENDATION: [Should code be consolidated? What action to take?]
 
-### 🔍 Similarity Matrix
-| Reference | Functional | Structural | Intent | Overall | Status |
-|-----------|------------|------------|---------|---------|---------|
-| #1 | XX% | XX% | XX% | XX% | `[STATUS]` |
-| #2 | XX% | XX% | XX% | XX% | `[STATUS]` |
+Keep it brief and actionable."""
 
-### 📈 Duplication Assessment
-**Primary Concern:** `[LOGIC_DUPLICATION/PATTERN_REPETITION/BOILERPLATE/NONE]`
-**Risk Level:** `[HIGH/MEDIUM/LOW]`
-**Refactoring Complexity:** `[SIMPLE/MODERATE/COMPLEX]`
-
-### 🐛 Quality Issues
-- **Code Structure:** [Issues with organization, complexity]
-- **Naming Conventions:** [Variable/function naming problems]
-- **Error Handling:** [Missing or inadequate error handling]
-- **Performance:** [Potential bottlenecks or inefficiencies]
-
-### 💡 Consolidation Recommendations
-1. **[Priority Level]** - [Specific refactoring suggestion]
-   ```python
-   # Example improvement
-   [code example if applicable]
-   ```
-2. **[Priority Level]** - [Specific improvement]
-
-### 🎯 Action Plan
-| Priority | Action | Effort | Impact |
-|----------|--------|--------|--------|
-| P1 | [High priority action] | [Low/Med/High] | [Description] |
-| P2 | [Medium priority action] | [Low/Med/High] | [Description] |
-
-### 📋 Final Recommendation
-**Status:** `[NEEDS_IMMEDIATE_REFACTORING/CONSIDER_REFACTORING/ACCEPTABLE/GOOD]`
-**Next Steps:** [Specific actionable recommendations]
-
----
-> 🔧 **Note:** Focus on functional duplication over superficial similarities. Consider maintainability impact.
-"""
         return prompt.strip()
 
     def generate_summary_prompt(
         self,
-        coding_style_result: str,
-        duplication_check_result: str,
-        context: Optional[Dict[str, Any]] = None
+        style_result: str,
+        duplication_result: str,
+        function_name: str = ""
     ) -> str:
-        """Generate an enhanced summary prompt with better context integration."""
+        """Generate a concise summary prompt."""
 
-        context_section = ""
-        if context:
-            context_section = f"""
-## 📊 Change Context
-- **Function:** `{context.get('function_name', 'Unknown')}`
-- **File:** `{context.get('file_path', 'Unknown')}`
-- **Change Type:** {context.get('change_type', 'Unknown')}
-- **Lines Modified:** +{context.get('total_added_lines', 0)} -{context.get('total_deleted_lines', 0)}
-"""
+        # Clean up the results if they're too verbose
+        def clean_result(result: str) -> str:
+            if not result or "I'm sorry" in result or "I don't have capabilities" in result:
+                return "No issues found."
+            return result.strip()
 
-        prompt = f"""# 📋 Comprehensive Code Review Summary
+        cleaned_style = clean_result(style_result)
+        cleaned_duplication = clean_result(duplication_result)
 
-You are a senior engineering lead conducting a final code review assessment. Synthesize the following analysis reports into a unified, executive-ready summary.
+        return f"""Code review summary:
 
-{context_section}
+Style Review Results:
+{cleaned_style}
 
-## 📁 Input Analysis Reports
+Duplication Check Results:
+{cleaned_duplication}
 
-### 🔄 Code Quality & Diff Analysis
-{coding_style_result}
+Final Summary for `{function_name}`:
 
-### 🔍 Duplication Analysis
-{duplication_check_result}
+1. ISSUES FOUND:
+   - [List main problems if any, or "None"]
 
-## 🎯 Synthesis Requirements
+2. PRIORITY: [High/Medium/Low]
 
-1. **Consolidate Findings** - Merge overlapping issues, eliminate redundancy
-2. **Risk Assessment** - Evaluate impact on system stability and maintainability
-3. **Priority Classification** - Organize by business and technical impact
-4. **Action Planning** - Provide clear, prioritized remediation steps
-5. **Decision Support** - Give clear merge/hold recommendation
+3. RECOMMENDATION: [Approve/Request Changes/Needs Discussion]
 
-## 📊 Expected Summary Format
+4. REASON: [Brief 1-2 sentence explanation]
 
-# 🚨 Executive Code Review Summary
+Keep response under 200 words."""
 
-## 🔴 Blocking Issues (Must Fix Before Merge)
-- [ ] **[Issue Category]** - [Specific issue with business/technical impact]
-  - **Impact:** [Risk to system/users/maintainability]
-  - **Action:** [Specific fix required]
-- [ ] **[Issue Category]** - [Specific issue with business/technical impact]
-
-## 🟡 High Priority (Should Address Soon)
-- [ ] **[Issue Category]** - [Issue description with context]
-  - **Impact:** [Medium-term consequences]
-  - **Effort:** [Low/Medium/High]
-- [ ] **[Issue Category]** - [Issue description with context]
-
-## 🟢 Enhancement Opportunities (Nice to Have)
-- [ ] **[Category]** - [Improvement suggestion]
-- [ ] **[Category]** - [Code quality enhancement]
-
-## 📊 Risk Assessment Matrix
-| Risk Category | Level | Details | Mitigation |
-|---------------|-------|---------|------------|
-| **Security** | `[HIGH/MED/LOW]` | [Specific concerns] | [Required actions] |
-| **Performance** | `[HIGH/MED/LOW]` | [Potential impacts] | [Optimization steps] |
-| **Maintainability** | `[HIGH/MED/LOW]` | [Code quality issues] | [Refactoring needs] |
-| **Duplication** | `[HIGH/MED/LOW]` | [Redundancy level] | [Consolidation plan] |
-
-## 🔄 Code Duplication Status
-| Metric | Assessment | Action Required |
-|--------|------------|-----------------|
-| **Duplication Level** | `[NONE/LOW/MODERATE/HIGH]` | [Specific steps if needed] |
-| **Refactoring Priority** | `[P0/P1/P2/P3]` | [Timeline recommendation] |
-| **Complexity Impact** | `[POSITIVE/NEUTRAL/NEGATIVE]` | [Justification] |
-
-## 📈 Quality Metrics Summary
-| Dimension | Before | After | Change | Goal |
-|-----------|--------|--------|---------|------|
-| **Code Quality** | [Rating] | [Rating] | [↑↓→] | [Target] |
-| **Test Coverage** | [%] | [%] | [↑↓→] | [Target] |
-| **Complexity** | [Score] | [Score] | [↑↓→] | [Target] |
-| **Maintainability** | [Score] | [Score] | [↑↓→] | [Target] |
-
-## 🎯 Final Recommendations
-
-### Immediate Actions (Next 24 Hours)
-1. **[Action]** - [Specific task with owner if known]
-2. **[Action]** - [Specific task with owner if known]
-
-### Short-term Actions (Next Sprint)
-1. **[Action]** - [Specific task with effort estimate]
-2. **[Action]** - [Specific task with effort estimate]
-
-### Long-term Improvements (Next Quarter)
-1. **[Action]** - [Strategic improvement]
-2. **[Action]** - [Process enhancement]
-
-## ✅ Merge Decision
-| Criterion | Assessment | Status |
-|-----------|------------|---------|
-| **Functionality** | [Working/Broken/Partial] | `[✅/❌/⚠️]` |
-| **Code Quality** | [Excellent/Good/Acceptable/Poor] | `[✅/❌/⚠️]` |
-| **Security** | [Secure/Minor Issues/Major Issues] | `[✅/❌/⚠️]` |
-| **Performance** | [Improved/Same/Degraded] | `[✅/❌/⚠️]` |
-| **Test Coverage** | [Adequate/Insufficient] | `[✅/❌/⚠️]` |
-
-### 🚦 Final Verdict
-**Recommendation:** `[APPROVE/APPROVE_WITH_COMMENTS/REQUEST_CHANGES/HOLD]`
-**Confidence Level:** `[HIGH/MEDIUM/LOW]`
-**Risk Level:** `[LOW/MEDIUM/HIGH]`
-
-**Rationale:** [2-3 sentence justification for the decision]
-
----
-> 🤖 **Auto-generated Review** | Please address all blocking issues before proceeding with merge.
-
-## 📋 Review Guidelines
-- Prioritize security and functionality issues
-- Consider long-term maintainability impact
-- Provide specific, actionable feedback
-- Balance perfectionism with delivery velocity
-- Focus on business value and user impact
-"""
         return prompt.strip()
 
-    def generate_contextual_review_prompt(
-        self,
-        payload_data: Dict[str, Any]
-    ) -> str:
-        """
-        Generate a comprehensive review prompt using the full payload context.
-        """
-        # Extract key information from payload
+    def generate_contextual_review_prompt(self, payload_data: Dict[str, Any]) -> str:
+        """Generate a comprehensive but concise review prompt."""
+
         added_code = payload_data.get('added_code', [])
         deleted_code = payload_data.get('deleted_code', [])
         full_function_code = payload_data.get('full_function_code', '')
         function_name = payload_data.get('function_name', '')
-        file_path = payload_data.get('file_path', '')
-        project_name = payload_data.get('project_name', '')
-        summary = payload_data.get('summary', {})
 
-        # Generate the main diff analysis prompt
-        main_prompt = self.generate_coding_style_prompt_with_diff(
+        return self.generate_style_review_prompt(
             added_code=added_code,
             deleted_code=deleted_code,
             full_function_code=full_function_code,
-            function_name=function_name,
-            file_path=file_path
+            function_name=function_name
         )
 
-        # Add project context
-        project_context = f"""
-## 🏗️ Project Context
-- **Project:** `{project_name}`
-- **Total Lines Added:** {summary.get('total_added_lines', 0)}
-- **Total Lines Deleted:** {summary.get('total_deleted_lines', 0)}
-- **Modified Lines:** {len(summary.get('added_line_numbers', []))} additions, {len(summary.get('deleted_line_numbers', []))} deletions
-        """.strip()
 
-        # Combine with enhanced context
-        enhanced_prompt = f"{project_context}\n\n{main_prompt}"
+# Alternative: Even simpler prompts for better model performance
+class MinimalCodeReviewPrompts:
+    def __init__(self):
+        pass
 
-        return enhanced_prompt
+    def _clean_code(self, code: str) -> str:
+        """Basic code cleaning."""
+        return code.strip() if code else ""
+
+    def generate_review_prompt(
+        self,
+        added_code: List[Dict[str, Any]],
+        deleted_code: List[Dict[str, Any]],
+        function_name: str = ""
+    ) -> str:
+        """Ultra-simple review prompt."""
+
+        # Get the main code blocks
+        added_text = ""
+        if added_code:
+            first_added = added_code[0]
+            if isinstance(first_added, CodeBlock):
+                added_text = first_added.code
+            else:
+                added_text = first_added.get('code', '')
+
+        deleted_text = ""
+        if deleted_code:
+            first_deleted = deleted_code[0]
+            if isinstance(first_deleted, CodeBlock):
+                deleted_text = first_deleted.code
+            else:
+                deleted_text = first_deleted.get('code', '')
+
+        prompt_parts = [f"Review this code change in function {function_name}:"]
+
+        if added_text:
+            prompt_parts.append(f"\nNew code:\n```python\n{self._clean_code(added_text)}\n```")
+
+        if deleted_text:
+            prompt_parts.append(f"\nRemoved code:\n```python\n{self._clean_code(deleted_text)}\n```")
+
+        prompt_parts.append("\nWhat issues do you see? Should this be merged?")
+
+        return "\n".join(prompt_parts)
+
+    def generate_duplication_prompt(
+        self,
+        code_snippet: str,
+        similar_codes: List[Dict[str, Any]]
+    ) -> str:
+        """Ultra-simple duplication check."""
+
+        if not similar_codes:
+            return ""
+
+        similar_code = similar_codes[0].get('code', '') if similar_codes else ''
+
+        return f"""Is this code duplicated?
+
+Code A:
+```python
+{self._clean_code(code_snippet)}
+```
+
+Code B:
+```python
+{self._clean_code(similar_code)}
+```
+
+Are they duplicates? Should they be combined?"""
+
+    def generate_summary_prompt(self, style_result: str, duplication_result: str) -> str:
+        """Ultra-simple summary."""
+
+        if not style_result.strip():
+            style_result = "No issues found"
+        if not duplication_result.strip():
+            duplication_result = "No duplicates found"
+
+        return f"""QUICK REVIEW SUMMARY:
+
+Quality Issues: {style_result}
+
+Duplication: {duplication_result}
+
+DECISION: Should this code change be approved? Give a simple Yes/No with one sentence reason."""
