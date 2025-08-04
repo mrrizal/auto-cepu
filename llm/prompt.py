@@ -38,7 +38,7 @@ class CodeReviewPromptGenerator:
         full_function_code: str = "",
         function_name: str = ""
     ) -> str:
-        """Generate a concise code review prompt."""
+        """Generate a concise code review prompt with strict format enforcement."""
 
         # Format added code
         added_blocks = []
@@ -50,7 +50,10 @@ class CodeReviewPromptGenerator:
 
             clean_code = self._clean_code(code)
             if clean_code:
-                added_blocks.append(f"Added block {i}:\n```python\n{clean_code}\n```")
+                # Limit code length to prevent overwhelming the model
+                if len(clean_code) > 300:
+                    clean_code = clean_code[:300] + "\n... [truncated]"
+                added_blocks.append(f"```python\n{clean_code}\n```")
 
         # Format deleted code
         deleted_blocks = []
@@ -62,35 +65,43 @@ class CodeReviewPromptGenerator:
 
             clean_code = self._clean_code(code)
             if clean_code:
-                deleted_blocks.append(f"Deleted block {i}:\n```python\n{clean_code}\n```")
+                if len(clean_code) > 300:
+                    clean_code = clean_code[:300] + "\n... [truncated]"
+                deleted_blocks.append(f"```python\n{clean_code}\n```")
 
-        # Format full function
+        # Format full function (limit size)
         full_code_section = ""
         if full_function_code:
             clean_full = self._clean_code(full_function_code)
-            full_code_section = f"\nFull function:\n```python\n{clean_full}\n```"
+            if len(clean_full) > 500:
+                clean_full = clean_full[:500] + "\n... [truncated]"
+            full_code_section = f"Full function `{function_name}`:\n```python\n{clean_full}\n```\n"
 
-        # Build the prompt
-        prompt = f"""Review this Python code change for function `{function_name}`:
+        # Build the prompt with very clear instructions
+        changes_section = ""
+        if added_blocks:
+            changes_section += f"ADDED:\n{chr(10).join(added_blocks)}\n"
+        if deleted_blocks:
+            changes_section += f"REMOVED:\n{chr(10).join(deleted_blocks)}\n"
 
-{full_code_section}
+        if not changes_section:
+            changes_section = "No code changes detected.\n"
 
-Changes made:
-{chr(10).join(added_blocks) if added_blocks else "No code added."}
+        prompt = f"""You are a code reviewer. Analyze this Python code change and respond EXACTLY in the format below.
 
-{chr(10).join(deleted_blocks) if deleted_blocks else "No code deleted."}
+{full_code_section}{changes_section}
 
-Please respond in this format:
+You MUST respond in this EXACT format (copy the headers exactly):
 
-SUMMARY: [What this change does in 1-2 sentences]
+SUMMARY: [One sentence describing what changed]
 
-ISSUES: [List any bugs, problems, or concerns. Write "None found" if no issues]
+ISSUES: [List specific bugs/problems, or write "None found"]
 
-IMPROVEMENTS: [Suggest code quality improvements. Write "None needed" if code is good]
+IMPROVEMENTS: [Suggest specific improvements, or write "None needed"]
 
-DECISION: [Yes/No] - [Brief reason why]
+DECISION: [Yes/No] - [One sentence reason]
 
-Keep each section concise and actionable."""
+Do not add extra text or explanations outside this format."""
 
         return prompt.strip()
 
@@ -100,45 +111,46 @@ Keep each section concise and actionable."""
         similar_codes: List[Dict[str, Any]],
         function_name: str = ""
     ) -> str:
-        """Generate a simple duplication check prompt."""
+        """Generate a focused duplication check prompt."""
 
         if not code_snippet.strip() or not similar_codes:
             return ""
 
         clean_snippet = self._clean_code(code_snippet)
+        if len(clean_snippet) > 400:
+            clean_snippet = clean_snippet[:400] + "\n... [truncated]"
 
-        # Format similar code
-        similar_sections = []
-        for i, similar in enumerate(similar_codes[:3], 1):  # Limit to 3 examples
-            file_path = similar.get('file_path', f'file_{i}')
-            code = similar.get('code', '')
-            similarity = similar.get('similarity_score', 'N/A')
+        # Only use the most similar code to avoid confusion
+        most_similar = similar_codes[0]
+        file_path = most_similar.get('file_path', 'unknown_file')
+        similar_code = most_similar.get('code', '')
+        similarity_score = most_similar.get('similarity_score', 'N/A')
 
-            clean_similar = self._clean_code(code)
-            if len(clean_similar) > 500:  # Truncate long code
-                clean_similar = clean_similar[:500] + "\n... [truncated]"
+        clean_similar = self._clean_code(similar_code)
+        if len(clean_similar) > 400:
+            clean_similar = clean_similar[:400] + "\n... [truncated]"
 
-            similar_sections.append(f"Similar code {i} (from {file_path}, {similarity}% similar):\n```python\n{clean_similar}\n```")
-
-        prompt = f"""Check if this code is duplicated in the codebase:
+        prompt = f"""Check for code duplication. Respond EXACTLY in the format below.
 
 Current code from `{function_name}`:
 ```python
 {clean_snippet}
 ```
 
-Found similar code:
-{chr(10).join(similar_sections)}
+Similar code from `{file_path}` ({similarity_score}% similar):
+```python
+{clean_similar}
+```
 
-Respond in this format:
+You MUST respond in this EXACT format:
 
 DUPLICATION LEVEL: [None/Low/Medium/High]
 
-ANALYSIS: [Are these actual duplicates or just similar patterns?]
+ANALYSIS: [Are these actual duplicates? One sentence.]
 
-RECOMMENDATION: [Should code be consolidated? What action to take?]
+RECOMMENDATION: [What action to take? One sentence.]
 
-Keep it brief and actionable."""
+Do not add extra text."""
 
         return prompt.strip()
 
@@ -148,37 +160,51 @@ Keep it brief and actionable."""
         duplication_result: str,
         function_name: str = ""
     ) -> str:
-        """Generate a concise summary prompt."""
+        """Generate a very focused summary prompt."""
 
-        # Clean up the results if they're too verbose
-        def clean_result(result: str) -> str:
-            if not result or "I'm sorry" in result or "I don't have capabilities" in result:
-                return "No issues found."
-            return result.strip()
+        # Extract key info from previous results
+        def extract_decision(result: str) -> str:
+            if not result or "sorry" in result.lower():
+                return "No review completed"
 
-        cleaned_style = clean_result(style_result)
-        cleaned_duplication = clean_result(duplication_result)
+            lines = result.split('\n')
+            for line in lines:
+                if 'DECISION:' in line.upper():
+                    return line.strip()
+                elif 'ISSUES:' in line.upper():
+                    if 'none found' in line.lower():
+                        return "No issues found"
+            return result[:100] + "..." if len(result) > 100 else result
 
-        prompt = f"""Code review summary:
+        def extract_duplication(result: str) -> str:
+            if not result or "sorry" in result.lower():
+                return "No duplication check"
 
-Style Review Results:
-{cleaned_style}
+            lines = result.split('\n')
+            for line in lines:
+                if 'DUPLICATION LEVEL:' in line.upper():
+                    return line.strip()
+            return "No duplicates found"
 
-Duplication Check Results:
-{cleaned_duplication}
+        style_summary = extract_decision(style_result)
+        dup_summary = extract_duplication(duplication_result)
 
-Final Summary for `{function_name}`:
+        prompt = f"""Create a final code review summary. Respond EXACTLY in this format.
 
-1. ISSUES FOUND:
-   - [List main problems if any, or "None"]
+Style Review: {style_summary}
+Duplication Check: {dup_summary}
 
-2. PRIORITY: [High/Medium/Low]
+You MUST respond in this EXACT format:
 
-3. RECOMMENDATION: [Approve/Request Changes/Needs Discussion]
+ISSUES FOUND: [List main problems, or write "None"]
 
-4. REASON: [Brief 1-2 sentence explanation]
+PRIORITY: [High/Medium/Low]
 
-Keep response under 200 words."""
+RECOMMENDATION: [Approve/Request Changes/Needs Discussion]
+
+REASON: [One sentence explanation]
+
+Do not add extra text. Keep under 100 words total."""
 
         return prompt.strip()
 
@@ -198,14 +224,14 @@ Keep response under 200 words."""
         )
 
 
-# Alternative: Even simpler prompts for better model performance
+# Even more minimal version for better model compliance
 class MinimalCodeReviewPrompts:
     def __init__(self):
         pass
 
     def _clean_code(self, code: str) -> str:
         """Basic code cleaning."""
-        return code.strip() if code else ""
+        return code.strip()[:400] if code else ""  # Limit length
 
     def generate_review_prompt(
         self,
@@ -213,7 +239,7 @@ class MinimalCodeReviewPrompts:
         deleted_code: List[Dict[str, Any]],
         function_name: str = ""
     ) -> str:
-        """Ultra-simple review prompt."""
+        """Ultra-focused review prompt."""
 
         # Get the main code blocks
         added_text = ""
@@ -232,17 +258,26 @@ class MinimalCodeReviewPrompts:
             else:
                 deleted_text = first_deleted.get('code', '')
 
-        prompt_parts = [f"Review this code change in function {function_name}:"]
+        prompt = f"""Code review for function `{function_name}`. Answer in EXACT format below.
+
+"""
 
         if added_text:
-            prompt_parts.append(f"\nNew code:\n```python\n{self._clean_code(added_text)}\n```")
+            prompt += f"NEW CODE:\n```python\n{self._clean_code(added_text)}\n```\n"
 
         if deleted_text:
-            prompt_parts.append(f"\nRemoved code:\n```python\n{self._clean_code(deleted_text)}\n```")
+            prompt += f"REMOVED CODE:\n```python\n{self._clean_code(deleted_text)}\n```\n"
 
-        prompt_parts.append("\nWhat issues do you see? Should this be merged?")
+        prompt += """
+Format your response EXACTLY like this:
 
-        return "\n".join(prompt_parts)
+ISSUES: [List problems or "None"]
+APPROVE: [Yes/No]
+REASON: [One sentence]
+
+No other text allowed."""
+
+        return prompt
 
     def generate_duplication_prompt(
         self,
@@ -252,36 +287,44 @@ class MinimalCodeReviewPrompts:
         """Ultra-simple duplication check."""
 
         if not similar_codes:
-            return ""
+            return "No similar code found.\n\nDUPLICATE: No\nACTION: None needed"
 
         similar_code = similar_codes[0].get('code', '') if similar_codes else ''
 
-        return f"""Is this code duplicated?
+        return f"""Compare these code blocks:
 
-Code A:
+CODE A:
 ```python
 {self._clean_code(code_snippet)}
 ```
 
-Code B:
+CODE B:
 ```python
 {self._clean_code(similar_code)}
 ```
 
-Are they duplicates? Should they be combined?"""
+Response format:
+DUPLICATE: [Yes/No]
+ACTION: [Combine/Keep separate/Review needed]"""
 
     def generate_summary_prompt(self, style_result: str, duplication_result: str) -> str:
         """Ultra-simple summary."""
 
-        if not style_result.strip():
-            style_result = "No issues found"
-        if not duplication_result.strip():
-            duplication_result = "No duplicates found"
+        return f"""Final decision based on:
 
-        return f"""QUICK REVIEW SUMMARY:
+Style: {style_result[:100]}
+Duplication: {duplication_result[:100]}
 
-Quality Issues: {style_result}
+FINAL DECISION: [APPROVE/REJECT]
+MAIN REASON: [One sentence]
 
-Duplication: {duplication_result}
+No additional text."""
 
-DECISION: Should this code change be approved? Give a simple Yes/No with one sentence reason."""
+
+# Factory function to choose the right prompt generator
+def get_prompt_generator(model_name: str = ""):
+    """Select appropriate prompt generator based on model."""
+    if "deepseek" in model_name.lower() or "coder" in model_name.lower():
+        return MinimalCodeReviewPrompts()
+    else:
+        return CodeReviewPromptGenerator()

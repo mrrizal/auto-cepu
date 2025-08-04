@@ -14,10 +14,10 @@ class CodeReviewLLM:
                 json={
                     "model": self.model,
                     "prompt": prompt,
-                    "temperature": 0.2,
-                    "top_k": 40,
-                    "top_p": 0.9,
-                    "repeat_penalty": 1.1,
+                    "temperature": 0.1,
+                    "top_k": 20,
+                    "top_p": 0.8,
+                    "repeat_penalty": 1.2,
                     "stream": False
                 }
             )
