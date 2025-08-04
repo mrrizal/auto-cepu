@@ -7,7 +7,6 @@ from ingestion import (
 )
 from config import Config
 from api import app
-from pprint import pprint
 
 
 if __name__ == "__main__":
