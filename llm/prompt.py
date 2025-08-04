@@ -50,9 +50,6 @@ class CodeReviewPromptGenerator:
 
             clean_code = self._clean_code(code)
             if clean_code:
-                # Limit code length to prevent overwhelming the model
-                if len(clean_code) > 300:
-                    clean_code = clean_code[:300] + "\n... [truncated]"
                 added_blocks.append(f"```python\n{clean_code}\n```")
 
         # Format deleted code
@@ -65,16 +62,12 @@ class CodeReviewPromptGenerator:
 
             clean_code = self._clean_code(code)
             if clean_code:
-                if len(clean_code) > 300:
-                    clean_code = clean_code[:300] + "\n... [truncated]"
                 deleted_blocks.append(f"```python\n{clean_code}\n```")
 
         # Format full function (limit size)
         full_code_section = ""
         if full_function_code:
             clean_full = self._clean_code(full_function_code)
-            if len(clean_full) > 500:
-                clean_full = clean_full[:500] + "\n... [truncated]"
             full_code_section = f"Full function `{function_name}`:\n```python\n{clean_full}\n```\n"
 
         # Build the prompt with very clear instructions
@@ -187,8 +180,11 @@ Your job: Decide if this code change should be approved based on the findings ab
 
 Response format:
 ISSUES FOUND: [Summarize actual problems found, or "None"]
+
 PRIORITY: [High/Medium/Low]
+
 RECOMMENDATION: [Approve/Request Changes/Needs Discussion]
+
 REASON: [Why you made this recommendation]
 
 Focus on the CODE QUALITY, not the review format."""
