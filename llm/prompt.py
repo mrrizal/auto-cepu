@@ -117,18 +117,14 @@ Do not add extra text or explanations outside this format."""
             return ""
 
         clean_snippet = self._clean_code(code_snippet)
-        if len(clean_snippet) > 400:
-            clean_snippet = clean_snippet[:400] + "\n... [truncated]"
 
         # Only use the most similar code to avoid confusion
         most_similar = similar_codes[0]
-        file_path = most_similar.get('file_path', 'unknown_file')
+        file_path = most_similar.get('file', 'unknown_file')
         similar_code = most_similar.get('code', '')
-        similarity_score = most_similar.get('similarity_score', 'N/A')
+        similarity_score = most_similar.get('similarity', 'N/A')
 
         clean_similar = self._clean_code(similar_code)
-        if len(clean_similar) > 400:
-            clean_similar = clean_similar[:400] + "\n... [truncated]"
 
         prompt = f"""Check for code duplication. Respond EXACTLY in the format below.
 
@@ -163,48 +159,39 @@ Do not add extra text."""
         """Generate a very focused summary prompt."""
 
         # Extract key info from previous results
-        def extract_decision(result: str) -> str:
+        def extract_key_info(result: str, keyword: str) -> str:
             if not result or "sorry" in result.lower():
-                return "No review completed"
+                return "No issues"
 
+            # Look for the specific information we need
             lines = result.split('\n')
             for line in lines:
-                if 'DECISION:' in line.upper():
-                    return line.strip()
-                elif 'ISSUES:' in line.upper():
-                    if 'none found' in line.lower():
-                        return "No issues found"
-            return result[:100] + "..." if len(result) > 100 else result
+                if keyword.upper() in line.upper():
+                    # Extract just the content after the colon
+                    if ':' in line:
+                        return line.split(':', 1)[1].strip()
+            return "No issues"
 
-        def extract_duplication(result: str) -> str:
-            if not result or "sorry" in result.lower():
-                return "No duplication check"
+        # Extract actual findings, not the review format
+        style_issues = extract_key_info(style_result, "ISSUES")
+        style_decision = extract_key_info(style_result, "DECISION")
+        dup_level = extract_key_info(duplication_result, "DUPLICATION LEVEL")
 
-            lines = result.split('\n')
-            for line in lines:
-                if 'DUPLICATION LEVEL:' in line.upper():
-                    return line.strip()
-            return "No duplicates found"
+        prompt = f"""Based on these code review results for function `{function_name}`, make a final decision:
 
-        style_summary = extract_decision(style_result)
-        dup_summary = extract_duplication(duplication_result)
+STYLE REVIEW FOUND: {style_issues}
+STYLE DECISION: {style_decision}
+DUPLICATION LEVEL: {dup_level}
 
-        prompt = f"""Create a final code review summary. Respond EXACTLY in this format.
+Your job: Decide if this code change should be approved based on the findings above.
 
-Style Review: {style_summary}
-Duplication Check: {dup_summary}
-
-You MUST respond in this EXACT format:
-
-ISSUES FOUND: [List main problems, or write "None"]
-
+Response format:
+ISSUES FOUND: [Summarize actual problems found, or "None"]
 PRIORITY: [High/Medium/Low]
-
 RECOMMENDATION: [Approve/Request Changes/Needs Discussion]
+REASON: [Why you made this recommendation]
 
-REASON: [One sentence explanation]
-
-Do not add extra text. Keep under 100 words total."""
+Focus on the CODE QUALITY, not the review format."""
 
         return prompt.strip()
 
@@ -310,15 +297,21 @@ ACTION: [Combine/Keep separate/Review needed]"""
     def generate_summary_prompt(self, style_result: str, duplication_result: str) -> str:
         """Ultra-simple summary."""
 
-        return f"""Final decision based on:
+        # Extract actual findings from the reviews
+        style_clean = style_result.replace("ISSUES:", "").replace("APPROVE:", "").replace("REASON:", "")[:80]
+        dup_clean = duplication_result.replace("DUPLICATE:", "").replace("ACTION:", "")[:50]
 
-Style: {style_result[:100]}
-Duplication: {duplication_result[:100]}
+        return f"""Make final decision about this code change:
 
-FINAL DECISION: [APPROVE/REJECT]
-MAIN REASON: [One sentence]
+What the style review found: {style_clean}
+What the duplication check found: {dup_clean}
 
-No additional text."""
+Should this code change be merged?
+
+DECISION: [APPROVE/REJECT]
+REASON: [One sentence about the CODE QUALITY]
+
+Do not comment on the review process itself."""
 
 
 # Factory function to choose the right prompt generator
