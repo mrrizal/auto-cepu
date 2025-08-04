@@ -159,7 +159,7 @@ Keep it brief and actionable."""
         cleaned_style = clean_result(style_result)
         cleaned_duplication = clean_result(duplication_result)
 
-        return f"""Code review summary:
+        prompt = f"""Code review summary:
 
 Style Review Results:
 {cleaned_style}
