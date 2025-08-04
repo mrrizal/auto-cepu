@@ -99,6 +99,13 @@ python main.py --run-server
 
 The API will be available at `http://localhost:8000` with automatic reload enabled for development.
 
+#### 3. Complete Workflow Example
+Here's a complete workflow for setting up a repository:
+
+```bash
+# Clone, index, and start server in one command
+python main.py --clone --repo-url https://github.com/username/my-project --name my-project --index --run-server
+```
 
 ### Command Line Options
 
@@ -118,11 +125,11 @@ Once the server is running, external services like [`pr_analyzer`](https://githu
 
 ## 🏗️ Architecture
 
-This service operates as the core review engine in a distributed system:
+This service operates as the core review engine in a distributed system for **Python code on GitHub**:
 
-- **auto-cepu** (this repo): Core review logic, vector similarity search, LLM orchestration
+- **auto-cepu** (this repo): Core review logic, vector similarity search, LLM orchestration for Python repositories
 - **pr_analyzer**: GitHub integration, PR processing, comment posting
 - **Ollama**: LLM inference for generating review suggestions
 - **ChromaDB**: Vector database for code similarity detection
 
-The decoupled design allows the review engine to be used independently or integrated with different version control platforms beyond GitHub.
+**Current Support**: Python repositories hosted on GitHub. The decoupled design allows for future expansion to other languages and platforms.
