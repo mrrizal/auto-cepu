@@ -1,33 +1,20 @@
-# auto-cepu (standonline)
+# auto-cepu
 
-**auto-cepu** is the core **Python code review automation** engine—an API that drives LLM-powered reviews by hitting **Ollama** for contextual feedback. “CEPU” is a playful reverse of “code review” (code ripiu).
+**auto-cepu** is the core **Python code review automation** engine—an API that leverages LLM-powered reviews through **Ollama** for intelligent, contextual feedback. "CEPU" is a playful reverse of "code review" (code ripiu).
 
-> ⚠️ Note: GitHub / pull request integration is handled in a separate repository called [`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer).
-> This repo provides the review logic (LLM prompt orchestration, full-function context diffing, duplication/similarity lookup, and review composition) and exposes it as an API; `pr_analyzer` is responsible for invoking it on PRs and posting results back to GitHub.
+> ⚠️ **Integration Note**: GitHub pull request integration is handled separately in [`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer). This repository provides the core review logic and exposes it as an API, while `pr_analyzer` handles PR processing and GitHub comment posting.
 
 ---
 
 ## 🚀 Key Features
 
-- **Ollama-powered contextual review**: Sends diffs along with full function bodies and auxiliary context to Ollama to get best-practice-aware feedback.
-- **Duplication & similarity detection (pre-LM)**: Queries a vector database to find semantically similar or duplicated code. Those similarity results are then fed into Ollama as additional context so the review can incorporate redundancy insights.
-- **Decoupled integration**: Core review API is separate—[`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer) calls into this service to perform reviews and handle GitHub comment orchestration.
+- **Ollama-powered contextual review**: Analyzes code diffs with full function context and auxiliary information to provide intelligent, best-practice-aware feedback
+- **Duplication & similarity detection**: Uses vector database queries to identify semantically similar or duplicated code, feeding these insights to the LLM for comprehensive reviews
+- **Decoupled architecture**: Core review API separates concerns—[`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer) handles GitHub integration while this service focuses on review generation
 
 ---
 
-## 🧩 Integration Boundary
-
-This repository exposes the review capabilities. The expected flow is:
-
-1. [`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer) (the integration repo) obtains pull request diffs and metadata.
-2. It calls into **auto-cepu**’s API, supplying changed code + context.
-3. auto-cepu queries the vector database to find similar/duplicated code snippets.
-4. Those similarity findings, together with the full function context and diffs, are composed into a prompt and sent to **Ollama** to generate review suggestions.
-5. [`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer) takes the structured output and posts inline comments or summaries back to the GitHub pull request.
-
----
-
-## 🔄 Architecture Flow
+## 🔄 How It Works
 
 ```text
              ┌─────────────────────────────────┐
@@ -35,7 +22,7 @@ This repository exposes the review capabilities. The expected flow is:
              │ (GitHub integration layer)       │
              └─────────────────────────────────┘
                         │
-                        │ 1. Obtain PR diffs + metadata
+                        │ 1. Extract PR diffs + metadata
                         ▼
              ┌─────────────────────────────────┐
              │ Call auto-cepu API               │
@@ -44,17 +31,17 @@ This repository exposes the review capabilities. The expected flow is:
                         │
                         ▼
              ┌─────────────────────────────────┐
-             │        auto-cepu (standonline)   │
-             │  Core review API hitting Ollama  │
+             │        auto-cepu                 │
+             │  Core review engine + API        │
              └─────────────────────────────────┘
                         │
         ┌───────────────┴───────────────────┐
         │                                   │
         ▼                                   ▼
 ┌─────────────────────────┐       ┌────────────────────────────┐
-│ Query vector database   │       │ Use diff + full function   │
-│ for similar code        │       │ context + similarity data  │
-└─────────────────────────┘       │ to build LLM prompt        │
+│ Query vector database   │       │ Build comprehensive prompt │
+│ for similar code        │       │ with diff + context +      │
+└─────────────────────────┘       │ similarity insights        │
                                    └────────────────────────────┘
                                                │
                                                ▼
@@ -65,11 +52,77 @@ This repository exposes the review capabilities. The expected flow is:
                                                │
                                                ▼
              ┌─────────────────────────────────────────────────┐
-             │ Return structured review output to pr_analyzer   │
+             │ Return structured review to pr_analyzer          │
              └─────────────────────────────────────────────────┘
                                                │
                                                ▼
              ┌─────────────────────────────────────────────────┐
-             │ pr_analyzer posts inline comments / summary to   │
-             │ GitHub pull request                              │
+             │ pr_analyzer posts comments to GitHub PR         │
              └─────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Setup & Usage
+
+### Prerequisites
+- Python 3.8+
+- Ollama installed and running
+- ChromaDB for vector storage
+
+### Installation
+```bash
+git clone <this-repo-url>
+cd auto-cepu
+pip install -r requirements.txt
+```
+
+### Usage
+
+#### 1. Clone and Index a Repository
+First, clone a Python repository and index its code for similarity detection:
+
+```bash
+# Clone a repository
+python main.py --clone --repo-url https://github.com/username/my-project --name my-project
+
+# Index the cloned code for vector similarity search
+python main.py --index --name my-project
+```
+
+#### 2. Start the Review API Server
+Launch the FastAPI server to handle review requests:
+
+```bash
+python main.py --run-server
+```
+
+The API will be available at `http://localhost:8000` with automatic reload enabled for development.
+
+
+### Command Line Options
+
+| Option | Description |
+|--------|-------------|
+| `--repo-url` | URL of the Git repository to clone |
+| `--name` | Name for the repository directory (default: 'repo') |
+| `--clone` | Clone the specified repository |
+| `--index` | Parse and index Python code chunks for similarity search |
+| `--run-server` | Start the FastAPI review API server |
+
+### API Integration
+
+Once the server is running, external services like [`pr_analyzer`](https://github.com/mrrizal/python-pr-analyzer) can make HTTP requests to trigger code reviews. The API accepts code diffs and context, performs similarity analysis, and returns structured review feedback powered by Ollama.
+
+---
+
+## 🏗️ Architecture
+
+This service operates as the core review engine in a distributed system:
+
+- **auto-cepu** (this repo): Core review logic, vector similarity search, LLM orchestration
+- **pr_analyzer**: GitHub integration, PR processing, comment posting
+- **Ollama**: LLM inference for generating review suggestions
+- **ChromaDB**: Vector database for code similarity detection
+
+The decoupled design allows the review engine to be used independently or integrated with different version control platforms beyond GitHub.
