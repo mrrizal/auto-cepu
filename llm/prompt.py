@@ -64,25 +64,43 @@ class CodeReviewPromptGenerator:
             if clean_code:
                 deleted_blocks.append(f"```python\n{clean_code}\n```")
 
-        # Format full function (limit size)
-        full_code_section = ""
+        # Determine context strategy based on change types
+        has_additions = bool(added_blocks)
+        has_deletions = bool(deleted_blocks)
+
+        # Format context section
+        context_section = ""
         if full_function_code:
             clean_full = self._clean_code(full_function_code)
-            full_code_section = f"Full function `{function_name}`:\n```python\n{clean_full}\n```\n"
+
+            if has_deletions and not has_additions:
+                # For deletions only, show it as "current state after removal"
+                context_section = f"Current function `{function_name}` (after removal):\n```python\n{clean_full}\n```\n"
+            elif has_additions or (has_additions and has_deletions):
+                # For additions or mixed changes, show as current state
+                context_section = f"Full function `{function_name}`:\n```python\n{clean_full}\n```\n"
 
         # Build the prompt with very clear instructions
         changes_section = ""
         if added_blocks:
             changes_section += f"ADDED:\n{chr(10).join(added_blocks)}\n"
         if deleted_blocks:
-            changes_section += f"REMOVED:\n{chr(10).join(deleted_blocks)}\n"
+            if has_deletions and not has_additions:
+                changes_section += f"REMOVED (these lines were deleted from the function above):\n{chr(10).join(deleted_blocks)}\n"
+            else:
+                changes_section += f"REMOVED:\n{chr(10).join(deleted_blocks)}\n"
 
         if not changes_section:
             changes_section = "No code changes detected.\n"
 
-        prompt = f"""You are a code reviewer. Analyze this Python code change and respond EXACTLY in the format below.
+        # Adjust instruction based on change type
+        instruction_context = ""
+        if has_deletions and not has_additions:
+            instruction_context = " The function shown above is the current state after the removal."
 
-{full_code_section}{changes_section}
+        prompt = f"""You are a code reviewer. Analyze this Python code change and respond EXACTLY in the format below.{instruction_context}
+
+{context_section}{changes_section}
 
 You MUST respond in this EXACT format (copy the headers exactly):
 
