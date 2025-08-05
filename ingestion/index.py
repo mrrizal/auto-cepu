@@ -488,6 +488,9 @@ class ChromaDBIndexingService(IndexingService):
         similary_code = []
         for index in duplicated_index:
             similarity_percentage = (1 - results['distances'][0][index]) * 100
+            if similarity_percentage <= 80.0:
+                continue
+
             similary_code.append({
                 "code": results['metadatas'][0][index]['code'],
                 'file': results['metadatas'][0][index]['filepath'].split('/')[-1],
