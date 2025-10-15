@@ -1,0 +1,1922 @@
+[
+  {
+    "full_function_code": "def validate_user_input(data):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    if not isinstance(data, dict):\n        logging.warning(\"Input data is not a dictionary\")\n        return False\n    required_fields = [\"username\", \"email\", \"password\"]\n    for field in required_fields:\n        if field not in data:\n            logging.warning(\"Missing required field: \" + field)\n            return False\n    if len(data[\"password\"]) < 8:\n        logging.warning(\"Password is too short\")\n        return False\n    end_time = time.time()\n    logging.info(\"Validation took \" + str(end_time - start_time) + \" seconds\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "end_time = time.time()\nlogging.info(\"Validation took \" + str(end_time - start_time) + \" seconds\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 8,
+        "end_line": 8,
+        "code": "print(\"Validation finished\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def format_string_cache(input_str, cache):\n    try:\n        if input_str in cache:\n            return cache[input_str]\n        result = input_str.upper()\n        cache[input_str] = result\n        return result\n    except Exception as e:\n        print(\"Error occurred: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "except Exception as e:\\n        print(\"Error occurred: \" + str(e))\\n        return None",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return result",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_string_cache"
+  },
+  {
+    "full_function_code": "def generate_weekdays(start_date, end_date):\n    weekdays = []\n    for n in range(int ((end_date - start_date).days)):\n        date = start_date + timedelta(n)\n        if date.weekday() < 5:\n            weekdays.append(date)\n    return weekdays",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 4,
+        "code": "weekdays = [start_date + timedelta(n) for n in range(int((end_date - start_date).days)) if (start_date + timedelta(n)).weekday() < 5]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for n in range(int ((end_date - start_date).days)):\n        date = start_date + timedelta(n)\n        if date.weekday() < 5:\n            weekdays.append(date)",
+        "line_count": 3
+      }
+    ],
+    "function_name": "generate_weekdays"
+  },
+  {
+    "full_function_code": "def validate_user_input(username: str, password: str) -> bool:\n    # Check if username is not empty\n    if not username:\n        print(\"Username cannot be empty\")\n        return False\n    # Check if password is not empty\n    if not password:\n        print(\"Password cannot be empty\")\n        return False\n    # Check if password length is at least 8 characters\n    if len(password) < 8:\n        print(\"Password must be at least 8 characters long\")\n        return False\n    # Log successful validation\n    print(\"User input is valid\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 10,
+        "code": "    # Log successful validation\n    print(\"User input is valid\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 8,
+        "end_line": 8,
+        "code": "    # TODO: Add logging for successful validation",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def handle_network_request(url, timeout, retries):\n    if not isinstance(url, str) or not url.startswith(\"http\"):\n        raise ValueError(\"Invalid URL\")\n    if not isinstance(timeout, (int, float)) or timeout <= 0:\n        raise ValueError(\"Invalid timeout\")\n    if not isinstance(retries, int) or retries < 0:\n        raise ValueError(\"Invalid retries\")\n    try:\n        for attempt in range(retries + 1):\n            try:\n                response = requests.get(url, timeout=timeout)\n                response.raise_for_status()\n                return response.json()\n            except requests.exceptions.HTTPError as http_err:\n                print(f\"HTTP error occurred: {http_err}\\n\")\n            except requests.exceptions.ConnectionError as conn_err:\n                print(f\"Error connecting: {conn_err}\\n\")\n            except requests.exceptions.Timeout as time_err:\n                print(f\"Timeout error occurred: {time_err}\\n\")\n            except requests.exceptions.RequestException as err:\n                print(f\"Something went wrong: {err}\\n\")\n        raise Exception(\"All retries failed\")\n    except Exception as e:\n        print(f\"An error occurred: {e}\\n\")",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 13,
+        "code": "except requests.exceptions.HTTPError as http_err:\\n                print(f\\\"HTTP error occurred: {http_err}\\\\n\\\")\\n            except requests.exceptions.ConnectionError as conn_err:\\n                print(f\\\"Error connecting: {conn_err}\\\\n\\\")",
+        "line_count": 5
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "print(\"An error occurred\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_network_request"
+  },
+  {
+    "full_function_code": "def optimize_database_query(query_string, max_results):\n    import logging\n    logging.basicConfig(level=logging.INFO)\n    logger = logging.getLogger(__name__)\n    try:\n        # Parse query string\n        query_params = query_string.split(\";\")\n        logger.info(\"Parsed query string: %s\", query_params)\n        # Execute database query\n        results = []\n        for param in query_params:\n            # Replace deprecated function call\n            results.extend([\"result1\", \"result2\"])\n            logger.info(\"Executed query with param: %s\", param)\n        # Log results\n        logger.info(\"Received %d results\", len(results))\n        return results[:max_results]\n    except Exception as e:\n        logger.error(\"Error executing query: %s\", str(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "logger.info(\"Parsed query string: %s\", query_params)\\n        # Execute database query\\n        results = []",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 9,
+        "end_line": 10,
+        "code": "results = __deprecated_function(query_params)\\n        ",
+        "line_count": 2
+      }
+    ],
+    "function_name": "optimize_database_query"
+  },
+  {
+    "full_function_code": "def calculate_gaussian_distribution(mean, standard_deviation, x):\n    try:\n        if standard_deviation <= 0:\n            raise ValueError(\"Standard deviation must be greater than zero.\")\n        numerator = np.exp(-((x - mean) ** 2) / (2 * standard_deviation ** 2))\n        denominator = standard_deviation * np.sqrt(2 * np.pi)\n        result = numerator / denominator\n        return result\n    except Exception as e:\n        logging.error(\"An error occurred: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "except Exception as e:\\n        logging.error(\"An error occurred: \" + str(e))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return numerator / denominator",
+        "line_count": 1
+      }
+    ],
+    "function_name": "calculate_gaussian_distribution"
+  },
+  {
+    "full_function_code": "def adjust_time_interval(start_time, end_time):\n    if start_time > end_time:\n        return []\n    time_interval = []\n    for hour in range(start_time, end_time + 1):\n        time_interval.append(hour)\n    # Removed dead code\n    return time_interval",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return time_interval",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "# This block was not being used\n#        if len(time_interval) == 0:\n#            return \"No time interval\"",
+        "line_count": 3
+      }
+    ],
+    "function_name": "adjust_time_interval"
+  },
+  {
+    "full_function_code": "def read_config_file(file_path):\n    try:\n        with open(file_path, 'r') as file:\n            config = file.readlines()\n        return config\n    except FileNotFoundError:\n        print(\"File not found: \" + file_path)\n        return None\n    except PermissionError:\n        print(\"Permission denied: \" + file_path)\n        return None\n    except Exception as e:\n        print(\"An error occurred: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "except Exception as e:\n        print(\"An error occurred: \" + str(e))",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 8,
+        "code": "except:\n        print(\"An unknown error occurred\")",
+        "line_count": 2
+      }
+    ],
+    "function_name": "read_config_file"
+  },
+  {
+    "full_function_code": "def handle_network_request(url, params, timeout=10):\n    import logging\n    import time\n    start_time = time.time()\n    logging.info(\"Starting network request to {}\".format(url))\n    if not isinstance(url, str) or not url.startswith(\"http\"):\n        logging.error(\"Invalid URL: {}\".format(url))\n        return None\n    if not isinstance(params, dict):\n        logging.error(\"Invalid parameters: {}\".format(params))\n        return None\n    try:\n        import requests\n        response = requests.get(url, params=params, timeout=timeout)\n        response.raise_for_status()\n    except requests.exceptions.RequestException as e:\n        logging.error(\"Request failed: {}\".format(e))\n        return None\n    logging.info(\"Request completed in {:.2f} seconds\".format(time.time() - start_time))\n    return response.json()",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 8,
+        "code": "if not isinstance(url, str) or not url.startswith(\"http\"):\n        logging.error(\"Invalid URL: {}\".format(url))\n        return None\n    if not isinstance(params, dict):\n        logging.error(\"Invalid parameters: {}\".format(params))\n        return None",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 0,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "handle_network_request"
+  },
+  {
+    "full_function_code": "def parse_config_file(file_path):\n    try:\n        with open(file_path, \"r\") as file:\n            config = file.read()\n            return config\n    except FileNotFoundError:\n        print(\"The file does not exist.\")\n        return None\n    except PermissionError:\n        print(\"You do not have permission to access the file.\")\n        return None\n    except Exception as e:\n        print(f\"An error occurred: {e}\")\n        return None",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "except Exception as e:\\n        print(f\\\"An error occurred: {e}\\\")\\n        return None",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 8,
+        "code": "except Exception:\\n        print(\"An unknown error occurred.\")",
+        "line_count": 2
+      }
+    ],
+    "function_name": "parse_config_file"
+  },
+  {
+    "full_function_code": "def extract_sentences_from_text(text):\n    sentences = []\n    sentence = \"\"\n    for char in text:\n        if char == \".\" or char == \"!\" or char == \"?\":\n            sentence += char\n            sentences.append(sentence)\n            sentence = \"\"\n        else:\n            sentence += char\n    return sentences",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "        if char == \":\" or char == \";\":\n            sentence += char\n            sentences.append(sentence)\n            sentence = \"\"",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "        if char == \".\" or char == \"!\" or char == \"?\":",
+        "line_count": 1
+      }
+    ],
+    "function_name": "extract_sentences_from_text"
+  },
+  {
+    "full_function_code": "def validate_user_input(data):\n    if isinstance(data, dict):\n        required_fields = [\"name\", \"email\", \"phone\"]\n        for field in required_fields:\n            if field not in data:\n                return False\n        return True\n    else:\n        return False",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "        # Check for empty values\n        for field in required_fields:\n            if not data[field]:\n                return False",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "    # Old dead code: if data.get(\"name\") == \"\":\n    #     return False",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def aggregate_user_engagement(data):\n    # Initialize variables\n    total_engagement = 0\n    user_count = 0\n    \n    # Iterate over each user's engagement data\n    for user_data in data:\n        # Check if user has any engagement data\n        if 'engagement' in user_data:\n            total_engagement += user_data['engagement']\n            user_count += 1\n    \n    # Calculate average engagement per user\n    if user_count > 0:\n        average_engagement = total_engagement / user_count\n        return average_engagement\n    else:\n        return 0",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "        # Check if user has any engagement data\n        if 'engagement' in user_data:",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "        total_engagement += user_data.get('engagement', 0)",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_user_engagement"
+  },
+  {
+    "full_function_code": "def parse_user_input(input_data):\n    import logging\n    import time\n    start_time = time.time()\n    logging.basicConfig(level=logging.INFO)\n    if not isinstance(input_data, dict):\n        logging.error(\"Input data must be a dictionary\")\n        return None\n    required_keys = [\"name\", \"age\", \"email\"]\n    for key in required_keys:\n        if key not in input_data:\n            logging.error(\"Missing required key: \" + key)\n            return None\n    if not isinstance(input_data[\"age\"], int) or input_data[\"age\"] < 0:\n        logging.error(\"Age must be a non-negative integer\")\n        return None\n    if not isinstance(input_data[\"email\"], str) or \"@\" not in input_data[\"email\"]:\n        logging.error(\"Invalid email address\")\n        return None\n    logging.info(\"Input data validated successfully\")\n    end_time = time.time()\n    logging.info(\"Validation took {:.2f} seconds\".format(end_time - start_time))\n    return input_data",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 12,
+        "code": "if not isinstance(input_data[\"age\"], int) or input_data[\"age\"] < 0:\n        logging.error(\"Age must be a non-negative integer\")\n        return None\n    if not isinstance(input_data[\"email\"], str) or \"@\" not in input_data[\"email\"]:",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 7,
+        "code": "if input_data[\"age\"] < 0:",
+        "line_count": 1
+      }
+    ],
+    "function_name": "parse_user_input"
+  },
+  {
+    "full_function_code": "def optimize_image_processing(self, images):\n    optimized_images = [image.resize((256, 256)) for image in images]\n    return optimized_images",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "optimized_images = [image.resize((256, 256)) for image in images]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 4,
+        "code": "optimized_images = []\nfor image in images:\n    optimized_images.append(image.resize((256, 256)))",
+        "line_count": 3
+      }
+    ],
+    "function_name": "optimize_image_processing"
+  },
+  {
+    "full_function_code": "def format_strings(input_list):\n    cache = {}\n    result = []\n    for string in input_list:\n        if string not in cache:\n            # Old logic\n            # formatted_string = string.upper() + \"_formatted\"\n            # New logic\n            formatted_string = string.lower() + \"_formatted\"\n            cache[string] = formatted_string\n        result.append(cache[string])\n    return result",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "            formatted_string = string.lower() + \"_formatted\"\n            cache[string] = formatted_string",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "            formatted_string = string.upper() + \"_formatted\"",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_strings"
+  },
+  {
+    "full_function_code": "def generate_user_list(user_ids):\n  user_list = []\n  for user_id in user_ids:\n    user_list.append({'id': user_id})\n  return user_list",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "user_list = [{'id': user_id} for user_id in user_ids]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 4,
+        "code": "for user_id in user_ids:\n    user_list.append({'id': user_id})",
+        "line_count": 3
+      }
+    ],
+    "function_name": "generate_user_list"
+  },
+  {
+    "full_function_code": "def handle_network_request(url, params, cache = {}):\n    if url in cache:\n        return cache[url]\n    try:\n        import requests\n        response = requests.get(url, params = params)\n        if response.status_code == 200:\n            result = response.json()\n            cache[url] = result\n            return result\n        else:\n            return None\n    except requests.exceptions.RequestException as e:\n        print(\"Error: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "        if response.status_code == 200:\n            result = response.json()",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "        result = response.json()",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_network_request"
+  },
+  {
+    "full_function_code": "def optimize_database_query(self, query_params):\n    if query_params.get(\"limit\") > 0:\n        # Apply limit to query\n        query = \"SELECT * FROM users WHERE id IN (SELECT id FROM users LIMIT \" + str(query_params[\"limit\"]) + \")\"\n        # Removed dead code block\n    else:\n        query = \"SELECT * FROM users\"\n    return query",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return query",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 4,
+        "code": "# This is a dead code block\n# It was not being used anywhere",
+        "line_count": 2
+      }
+    ],
+    "function_name": "optimize_database_query"
+  },
+  {
+    "full_function_code": "def validate_user_input(user_data):\n    try:\n        if not isinstance(user_data, dict):\n            raise TypeError(\"Input must be a dictionary\")\n        if \"username\" not in user_data or \"email\" not in user_data:\n            raise ValueError(\"Username and email are required\")\n        # Validate username length\n        if len(user_data[\"username\"]) < 3 or len(user_data[\"username\"]) > 32:\n            raise ValueError(\"Username must be between 3 and 32 characters long\")\n        # Validate email format\n        import re\n        email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n        if not re.match(email_pattern, user_data[\"email\"]):\n            raise ValueError(\"Invalid email format\")\n        return True\n    except TypeError as e:\n        print(f\"Error: {e}\")\n        return False\n    except ValueError as e:\n        print(f\"Error: {e}\")\n        return False\n    except Exception as e:\n        print(f\"An unexpected error occurred: {e}\")\n        return False",
+    "added_code": [
+      {
+        "start_line": 15,
+        "end_line": 16,
+        "code": "except Exception as e:\\n        print(f\\\"An unexpected error occurred: {e}\\\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 13,
+        "end_line": 14,
+        "code": "except:\\n        print(\"An unknown error occurred\")",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def aggregate_user_engagement_metrics(user_ids, engagement_data):\n    cached_results = {}\n    total_engagement = 0\n    for user_id in user_ids:\n        if user_id not in cached_results:\n            user_engagement = sum(1 for data in engagement_data if data['user_id'] == user_id)\n            cached_results[user_id] = user_engagement\n        total_engagement += cached_results[user_id]\n    average_engagement = total_engagement / len(user_ids)\n    return average_engagement",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 6,
+        "code": "            if user_id not in cached_results:\\n                user_engagement = sum(1 for data in engagement_data if data['user_id'] == user_id)\\n                cached_results[user_id] = user_engagement",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 4,
+        "end_line": 4,
+        "code": "        user_engagement = sum(1 for data in engagement_data if data['user_id'] == user_id)",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_user_engagement_metrics"
+  },
+  {
+    "full_function_code": "def process_student_records(student_list):\n    if not isinstance(student_list, list):\n        raise TypeError(\"Input must be a list of student records.\")\n    for student in student_list:\n        if not isinstance(student, dict):\n            raise TypeError(\"Each student record must be a dictionary.\")\n        try:\n            name = student['name']\n            grade = student['grade']\n            if not isinstance(name, str) or not isinstance(grade, (int, float)):\n                raise ValueError(\"Invalid student record: name must be a string and grade must be a number.\")\n            print(f\"Student: {name}, Grade: {grade}\")\n        except KeyError as e:\n            print(f\"Error: Missing key in student record - {e}\")\n",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 9,
+        "code": "try:\n            name = student['name']\n            grade = student['grade']\n            if not isinstance(name, str) or not isinstance(grade, (int, float)):\n                raise ValueError(\"Invalid student record: name must be a string and grade must be a number.\")",
+        "line_count": 5
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "name = student['name']\ngrade = student['grade']",
+        "line_count": 2
+      }
+    ],
+    "function_name": "process_student_records"
+  },
+  {
+    "full_function_code": "def optimize_database_query(query_params, cache_ttl = 300):\n    # Initialize cache dictionary\n    cache = {}\n    \n    # Check if result is already cached\n    if query_params['query_hash'] in cache:\n        return cache[query_params['query_hash']]\n    \n    # Execute database query\n    result = execute_database_query(query_params)\n    \n    # Cache result for future queries\n    cache[query_params['query_hash']] = result\n    \n    # Remove expired cache entries\n    remove_expired_cache_entries(cache, cache_ttl)\n    \n    return result",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "    # Cache result for future queries\n    cache[query_params['query_hash']] = result\n    # Remove expired cache entries",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "    # This line was removed to improve performance by caching results",
+        "line_count": 1
+      }
+    ],
+    "function_name": "optimize_database_query"
+  },
+  {
+    "full_function_code": "def normalize_time_intervals(intervals):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    normalized_intervals = []\n    for interval in intervals:\n        if interval[1] < interval[0]:\n            logging.warning(\"Invalid interval: (%d, %d)\" % (interval[0], interval[1]))\n            continue\n        normalized_interval = (interval[0], interval[1])\n        normalized_intervals.append(normalized_interval)\n    logging.info(\"Normalization took %.2f seconds\" % (time.time() - start_time))\n    return normalized_intervals",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "        logging.warning(\"Invalid interval: (%d, %d)\" % (interval[0], interval[1]))\n        continue",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "        normalized_interval = (max(interval[0], interval[1]), min(interval[0], interval[1]))",
+        "line_count": 1
+      }
+    ],
+    "function_name": "normalize_time_intervals"
+  },
+  {
+    "full_function_code": "def extract_keywords_from_text(text, num_keywords):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    words = text.split()\n    word_freq = {}\n    for word in words:\n        word = word.lower()\n        if word not in word_freq:\n            word_freq[word] = 1\n        else:\n            word_freq[word] += 1\n    sorted_word_freq = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)\n    logging.info(\"Text processing took {:.2f} seconds\".format(time.time() - start_time))\n    return sorted_word_freq[:num_keywords]",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "logging.basicConfig(level=logging.INFO)\nstart_time = time.time()\nlogging.info(\"Text processing took {{\\.2f}} seconds\".format(time.time() - start_time))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 9,
+        "end_line": 10,
+        "code": "print(\"Processing time: {:.2f} seconds\".format(time.time() - start_time))",
+        "line_count": 2
+      }
+    ],
+    "function_name": "extract_keywords_from_text"
+  },
+  {
+    "full_function_code": "def compute_statistics(data):\n    if not isinstance(data, list):\n        raise ValueError(\"Input must be a list\")\n    if len(data) == 0:\n        raise ValueError(\"Input list cannot be empty\")\n    mean = sum(data) / len(data)\n    variance = sum((x - mean) ** 2 for x in data) / len(data)\n    return mean, variance",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 4,
+        "code": "if len(data) == 0:\n        raise ValueError(\"Input list cannot be empty\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "# This is a dead code\n# print('Statistics:')",
+        "line_count": 2
+      }
+    ],
+    "function_name": "compute_statistics"
+  },
+  {
+    "full_function_code": "def read_and_process_file(filename):\n    cache = {}\n    with open(filename, \"r\") as file:\n        for line in file:\n            line = line.strip()\n            if line not in cache:\n                words = line.split()\n                word_count = len(words)\n                cache[line] = word_count\n            print(f\"Line: {line}, Word Count: {cache[line]}\")\n    return cache",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "                if line not in cache:\\n                    words = line.split()\\n                    word_count = len(words)\\n                    cache[line] = word_count",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "            word_count = len(line.split())",
+        "line_count": 1
+      }
+    ],
+    "function_name": "read_and_process_file"
+  },
+  {
+    "full_function_code": "def optimize_database_query(query_string):\n    try:\n        # Validate input query string\n        if not isinstance(query_string, str) or len(query_string) == 0:\n            raise ValueError(\"Invalid query string\")\n        # Optimize query by removing unnecessary whitespace\n        optimized_query = ' '.join(query_string.split())\n        # Execute optimized query\n        result = execute_query(optimized_query)\n        return result\n    except ValueError as ve:\n        print(\"Error: \" + str(ve))\n        return None\n    except Exception as e:\n        print(\"An error occurred: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "if not isinstance(query_string, str) or len(query_string) == 0:\\n            raise ValueError(\"Invalid query string\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 0,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "optimize_database_query"
+  },
+  {
+    "full_function_code": "def format_string_cache(input_list, cache_size=100):\n    try:\n        cache = {}\n        result = []\n        for input_str in input_list:\n            if input_str in cache:\n                result.append(cache[input_str])\n            else:\n                formatted_str = input_str.title()\n                cache[input_str] = formatted_str\n                result.append(formatted_str)\n        return result\n    except Exception as e:\n        print(\"Error occurred: \" + str(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 7,
+        "end_line": 9,
+        "code": "except Exception as e:\\n        print(\"Error occurred: \" + str(e))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 7,
+        "code": "return result",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_string_cache"
+  },
+  {
+    "full_function_code": "def read_and_process_file(filename):\n    import logging\n    import time\n    start_time = time.time()\n    try:\n        with open(filename, 'r') as file:\n            lines = [line.strip() for line in file]\n        logging.info(\"File read successfully in %.2f seconds.\" % (time.time() - start_time))\n        return lines\n    except FileNotFoundError:\n        logging.error(\"The file %s was not found.\" % filename)\n        return []\n    except Exception as e:\n        logging.error(\"An error occurred: %s\" % str(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "logging.info(\"File read successfully in %.2f seconds.\" % (time.time() - start_time))\n        except Exception as e:\n            logging.error(\"An error occurred: %s\" % str(e))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "print(\"File read successfully.\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "read_and_process_file"
+  },
+  {
+    "full_function_code": "def optimize_image_processing(image_path, cache_size=100):\n    try:\n        # Load image from cache if available\n        if image_path in cache:\n            return cache[image_path]\n        # Open image file\n        with open(image_path, \"rb\") as image_file:\n            # Read image data\n            image_data = image_file.read()\n            # Process image data\n            processed_image = process_image_data(image_data)\n            # Cache processed image\n            cache[image_path] = processed_image\n            # Remove oldest cache entry if cache is full\n            if len(cache) > cache_size:\n                oldest_image_path = min(cache, key=cache.get)\n                del cache[oldest_image_path]\n            return processed_image\n    except FileNotFoundError:\n        print(\"Error: Image file not found\")\n        return None\n    except Exception as e:\n        print(\"Error: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 12,
+        "code": "            # Cache processed image\n            cache[image_path] = processed_image\n            # Remove oldest cache entry if cache is full\n            if len(cache) > cache_size:\n                oldest_image_path = min(cache, key=cache.get)\n                del cache[oldest_image_path]",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "            # processed_image = process_image_data(image_data)  # No caching",
+        "line_count": 1
+      }
+    ],
+    "function_name": "optimize_image_processing"
+  },
+  {
+    "full_function_code": "def process_user_records(user_data):\n    logging.basicConfig(level=logging.INFO)\n    logger = logging.getLogger(__name__)\n    records = user_data.get('records', [])\n    processed_records = []\n    for record in records:\n        try:\n            processed_record = {\n                'id': record['id'],\n                'name': record['name'],\n                'email': record['email'],\n                'phone': record['phone'],\n                'address': record['address'],\n                'created_at': record['created_at'],\n                'updated_at': record['updated_at']\n            }\n            logger.info('Processed record: %s', processed_record)\n            processed_records.append(processed_record)\n        except KeyError as e:\n            logger.error('Error processing record: %s', e)\n    return processed_records",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "logger.info('Processed record: %s', processed_record)\n        except KeyError as e:\n            logger.error('Error processing record: %s', e)",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "print('Record processed')",
+        "line_count": 1
+      }
+    ],
+    "function_name": "process_user_records"
+  },
+  {
+    "full_function_code": "def convert_celsius_to_fahrenheit(celsius):\n    if not isinstance(celsius, (int, float)):\n        raise ValueError(\"Input must be a number\")\n    if celsius < -273.15:\n        raise ValueError(\"Temperature cannot be below absolute zero\")\n    fahrenheit = (celsius * 9/5) + 32\n    return fahrenheit",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 3,
+        "code": "if not isinstance(celsius, (int, float)):\n        raise ValueError(\"Input must be a number\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "# No input validation",
+        "line_count": 1
+      }
+    ],
+    "function_name": "convert_celsius_to_fahrenheit"
+  },
+  {
+    "full_function_code": "def handle_api_response(response):\n    api_response_time = response.get(\"time\", 0)\n    logging.info(\"API response received in \" + str(api_response_time) + \" seconds\")\n    if response.get(\"status\") == 200:\n        logging.debug(\"API response status: OK\")\n        return response.get(\"data\")\n    else:\n        logging.warning(\"API response status: \" + str(response.get(\"status\")))\n        return None",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 3,
+        "code": "logging.info(\"API response received in \" + str(api_response_time) + \" seconds\")\\n    logging.debug(\"API response timing measurement started\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 1,
+        "end_line": 1,
+        "code": "# response_time = response.get(\"time\", 0)",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_api_response"
+  },
+  {
+    "full_function_code": "def aggregate_user_data(user_ids, data_source):\n    # Initialize variables for better readability\n    user_id_list = user_ids\n    data_source_name = data_source\n    \n    # Improved performance by reducing unnecessary iterations\n    relevant_data = []\n    for user_id in user_id_list:\n        # Restructured control flow for clarity\n        if user_id in data_source_name:\n            user_data = data_source_name[user_id]\n            relevant_data.append(user_data)\n        else:\n            # Handle missing user data\n            print(\"User data not found for ID: \" + str(user_id))\n    \n    # Return the aggregated data\n    return relevant_data",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 9,
+        "code": "relevant_data = []\nfor user_id in user_id_list:\n    # Restructured control flow for clarity\n    if user_id in data_source_name:\n        user_data = data_source_name[user_id]\n        relevant_data.append(user_data)",
+        "line_count": 5
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 4,
+        "code": "user_data_list = {}\nfor user_id in user_ids:\n    user_data_list[user_id] = data_source.get(user_id, None)",
+        "line_count": 2
+      }
+    ],
+    "function_name": "aggregate_user_data"
+  },
+  {
+    "full_function_code": "def convert_length_units(value, from_unit, to_unit):\n    conversion_factors = {\n        'km': 1000,\n        'm': 1,\n        'cm': 0.01,\n        'mm': 0.001,\n        'in': 0.0254,\n        'ft': 0.3048\n    }\n    cache = {}\n    def convert_to_meters(unit_value, unit):\n        if unit not in cache:\n            cache[unit] = unit_value * conversion_factors[unit]\n        return cache[unit]\n    if from_unit == to_unit:\n        return value\n    value_in_meters = convert_to_meters(value, from_unit)\n    result = value_in_meters / conversion_factors[to_unit]\n    return result",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "        if unit not in cache:\\n            cache[unit] = unit_value * conversion_factors[unit]\\n        return cache[unit]",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "        return unit_value * conversion_factors[unit]",
+        "line_count": 1
+      }
+    ],
+    "function_name": "convert_length_units"
+  },
+  {
+    "full_function_code": "def validate_user_input(username, password, email):\n    if not isinstance(username, str) or not isinstance(password, str) or not isinstance(email, str):\n        raise TypeError(\"Username, password, and email must be strings\")\n    if len(username) < 3 or len(username) > 20:\n        raise ValueError(\"Username must be between 3 and 20 characters long\")\n    if len(password) < 8:\n        raise ValueError(\"Password must be at least 8 characters long\")\n    if not validate_email(email):\n        raise ValueError(\"Invalid email address\")\n    return True\n\ndef validate_email(email):\n    import re\n    pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n    if re.match(pattern, email):\n        return True\n    return False",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "if not validate_email(email):\n        raise ValueError(\"Invalid email address\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "if email.find(\"@\") == -1:",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def format_string_inputs(input_list, template):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    try:\n        formatted_strings = [template.format(**input_dict) for input_dict in input_list]\n        logging.info(\"String formatting completed in {:.2f} seconds\".format(time.time() - start_time))\n        return formatted_strings\n    except KeyError as e:\n        logging.error(\"Invalid input dictionary: {}\".format(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "logging.info(\"String formatting completed in {{\\.2f}} seconds\".format(time.time() - start_time))\\n        except KeyError as e:\\n            logging.error(\"Invalid input dictionary: {}\".format(e))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return formatted_strings",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_string_inputs"
+  },
+  {
+    "full_function_code": "def merge_and_log_user_data(user_ids, user_data, logging_enabled=True):\n    import logging\n    import time\n    start_time = time.time()\n    merged_data = {}\n    for user_id in user_ids:\n        if user_id in user_data:\n            merged_data[user_id] = user_data[user_id]\n            if logging_enabled:\n                logging.info(\"User data found and merged for user_id: %s\", user_id)\n    if logging_enabled:\n        logging.info(\"Data merging completed in %.2f seconds\", time.time() - start_time)\n    return merged_data",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "if logging_enabled:\\n                logging.info(\"User data found and merged for user_id: %s\", user_id)\\n        if logging_enabled:\\n            logging.info(\"Data merging completed in %.2f seconds\", time.time() - start_time)",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "# print(\"Merging data for user_id: \" + str(user_id))",
+        "line_count": 1
+      }
+    ],
+    "function_name": "merge_and_log_user_data"
+  },
+  {
+    "full_function_code": "def read_and_filter_large_file(file_path, min_line_length):\n    with open(file_path, \"r\") as file:\n        lines = file.readlines()\n        filtered_lines = [line.strip() for line in lines if len(line.strip()) >= min_line_length]\n        return filtered_lines",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 4,
+        "code": "filtered_lines = [line.strip() for line in lines if len(line.strip()) >= min_line_length]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 4,
+        "end_line": 6,
+        "code": "filtered_lines = []\n        for line in lines:\n            if len(line.strip()) >= min_line_length:\n                filtered_lines.append(line.strip())",
+        "line_count": 4
+      }
+    ],
+    "function_name": "read_and_filter_large_file"
+  },
+  {
+    "full_function_code": "def validate_user_input(data):\n    if not isinstance(data, dict):\n        raise ValueError(\"Input data must be a dictionary\")\n    required_fields = [\"name\", \"email\", \"phone\"]\n    for field in required_fields:\n        if field not in data:\n            raise ValueError(f\"Missing required field: {field}\")\n    if not isinstance(data[\"name\"], str) or not isinstance(data[\"email\"], str) or not isinstance(data[\"phone\"], str):\n        raise ValueError(\"Name, email, and phone must be strings\")\n    # Check for valid email format\n    import re\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n    if not re.match(email_pattern, data[\"email\"]):\n        raise ValueError(\"Invalid email format\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "    # Check for valid email format\n    import re\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\\\.[a-zA-Z0-9-.]+$\"",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 7,
+        "code": "    if not isinstance(data[\"email\"], str):\n        raise ValueError(\"Email must be a string\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def format_user_profile(user_id: int, user_name: str, user_email: str) -> str:\n    try:\n        if not isinstance(user_id, int) or not isinstance(user_name, str) or not isinstance(user_email, str):\n            raise ValueError(\"Invalid input type\")\n        if user_id <= 0:\n            raise ValueError(\"User ID must be a positive integer\")\n        if not user_name.strip() or not user_email.strip():\n            raise ValueError(\"User name and email cannot be empty\")\n        formatted_profile = \"User ID: {}\\nUser Name: {}\\nUser Email: {}\".format(user_id, user_name, user_email)\n        return formatted_profile\n    except ValueError as e:\n        return \"Error: {}\".format(e)",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 7,
+        "code": "if not isinstance(user_id, int) or not isinstance(user_name, str) or not isinstance(user_email, str):\\n            raise ValueError(\"Invalid input type\")\\n        if user_id <= 0:\\n            raise ValueError(\"User ID must be a positive integer\")\\n        if not user_name.strip() or not user_email.strip():\\n            raise ValueError(\"User name and email cannot be empty\")",
+        "line_count": 5
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "# user_id = int(user_id)",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_user_profile"
+  },
+  {
+    "full_function_code": "def format_phone_numbers(phone_numbers):\n  # Using list comprehension for better performance\n  formatted_numbers = [\"+1 \" + num.strip().replace(\"-\", \") for num in phone_numbers]\n  # Replacing deprecated string formatting function calls\n  formatted_numbers = [num.replace(\"(\", \" \").replace(\")\", \"\") for num in formatted_numbers]\n  return formatted_numbers",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 4,
+        "code": "  # Replacing deprecated string formatting function calls\n  formatted_numbers = [num.replace(\"(\", \" \").replace(\")\", \"\") for num in formatted_numbers]",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "  formatted_numbers = [\"+1 \" + num.strip() for num in phone_numbers]",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_phone_numbers"
+  },
+  {
+    "full_function_code": "def read_and_parse_file(file_path, encoding=\"utf-8\"):\n    try:\n        with open(file_path, \"r\", encoding=encoding) as file:\n            content = file.read()\n            if content.strip() == \"\":\n                return None\n            lines = content.split(\"\\n\")\n            parsed_lines = []\n            for line in lines:\n                if line.startswith(\"#\"):\n                    continue\n                parsed_lines.append(line.strip())\n            return parsed_lines\n    except FileNotFoundError:\n        print(\"File not found: \" + file_path)\n        return None\n    except Exception as e:\n        print(\"Error reading file: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "            if len(parsed_lines) == 0:\\n                return []",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "            if not parsed_lines:",
+        "line_count": 1
+      }
+    ],
+    "function_name": "read_and_parse_file"
+  },
+  {
+    "full_function_code": "def filter_and_transform_dict(input_dict, target_keys, transformation_func):\n    # Initialize an empty dictionary to store the filtered and transformed result\n    result = {}\n    # Iterate over each key-value pair in the input dictionary\n    for key, value in input_dict.items():\n        # Check if the current key is in the list of target keys\n        if key in target_keys:\n            # Apply the transformation function to the value and store it in the result dictionary\n            result[key] = transformation_func(value)\n    # Return the filtered and transformed dictionary\n    return result",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 4,
+        "code": "# Initialize an empty dictionary to store the filtered and transformed result\n    result = {}",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "result = {}\n    # Iterate over each key-value pair in the input dictionary",
+        "line_count": 2
+      }
+    ],
+    "function_name": "filter_and_transform_dict"
+  },
+  {
+    "full_function_code": "def aggregate_sensor_readings(sensor_data, timestamp):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    if not isinstance(sensor_data, list) or not all(isinstance(x, (int, float)) for x in sensor_data):\n        logging.error(\"Invalid sensor data type\")\n        return None\n    if len(sensor_data) == 0:\n        logging.warning(\"No sensor data available\")\n        return []\n    # Calculate aggregate values\n    min_value = min(sensor_data)\n    max_value = max(sensor_data)\n    avg_value = sum(sensor_data) / len(sensor_data)\n    logging.info(\"Aggregated sensor readings: min=%f, max=%f, avg=%f\", min_value, max_value, avg_value)\n    end_time = time.time()\n    logging.info(\"Processing time: %f seconds\", end_time - start_time)\n    return [min_value, max_value, avg_value]",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 9,
+        "code": "if not isinstance(sensor_data, list) or not all(isinstance(x, (int, float)) for x in sensor_data):\n        logging.error(\"Invalid sensor data type\")\n        return None\n    if len(sensor_data) == 0:\n        logging.warning(\"No sensor data available\")\n        return []",
+        "line_count": 5
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "if not sensor_data:\n        return []",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_sensor_readings"
+  },
+  {
+    "full_function_code": "def handle_api_response(api_response):\n    import logging\n    import time\n    start_time = time.time()\n    logging.info(\"API response received\")\n    if api_response.status_code == 200:\n        response_data = api_response.json()\n        logging.info(\"API response parsed successfully\")\n        elapsed_time = time.time() - start_time\n        logging.info(\"Response handling time: {:.2f} seconds\".format(elapsed_time))\n        return response_data\n    else:\n        logging.error(\"API response error: {}\".format(api_response.status_code))\n        return None",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "logging.info(\"API response received\")\n    elapsed_time = time.time() - start_time\n    logging.info(\"Response handling time: {:.2f} seconds\".format(elapsed_time))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 4,
+        "end_line": 4,
+        "code": "print(\"API response received\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_api_response"
+  },
+  {
+    "full_function_code": "def compute_magnitude(vector):\n  import math\n  magnitude = math.sqrt(sum([x**2 for x in vector]))\n  return magnitude",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "magnitude = math.sqrt(sum([x**2 for x in vector]))",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 4,
+        "code": "squared_sum = 0\nfor x in vector:\n  squared_sum += x**2\nmagnitude = math.sqrt(squared_sum)",
+        "line_count": 3
+      }
+    ],
+    "function_name": "compute_magnitude"
+  },
+  {
+    "full_function_code": "def convert_length_units(length, from_unit, to_unit):\n    conversion_factors = {\n        \"km\": 1000,\n        \"m\": 1,\n        \"cm\": 0.01,\n        \"mm\": 0.001,\n        \"mi\": 1609.34,\n        \"yd\": 0.9144,\n        \"ft\": 0.3048,\n        \"in\": 0.0254\n    }\n    cache = {}\n    def convert_to_meters(length, from_unit):\n        if from_unit not in cache:\n            cache[from_unit] = conversion_factors[from_unit]\n        return length * cache[from_unit]\n    def convert_from_meters(length, to_unit):\n        if to_unit not in cache:\n            cache[to_unit] = conversion_factors[to_unit]\n        return length / cache[to_unit]\n    length_in_meters = convert_to_meters(length, from_unit)\n    return convert_from_meters(length_in_meters, to_unit)",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "        if from_unit not in cache:\\n            cache[from_unit] = conversion_factors[from_unit]\\n        return length * cache[from_unit]",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "        return length * conversion_factors[from_unit]",
+        "line_count": 1
+      }
+    ],
+    "function_name": "convert_length_units"
+  },
+  {
+    "full_function_code": "def parse_user_input(input_data):\n    try:\n        user_ids = [user[\"id\"] for user in input_data]\n        return user_ids\n    except KeyError as e:\n        print(\"Error: \" + str(e))\n        return []\n    except Exception as e:\n        print(\"An error occurred: \" + str(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "except Exception as e:\\n        print(\"An error occurred: \" + str(e))",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "except:\\n        print(\"An unknown error occurred\")",
+        "line_count": 2
+      }
+    ],
+    "function_name": "parse_user_input"
+  },
+  {
+    "full_function_code": "def handle_api_response(data):\n    cached_results = {}\n    if \"results\" in data:\n        results = data[\"results\"]\n        # Cache intermediate results for performance\n        if \"query\" in data:\n            query = data[\"query\"]\n            if query not in cached_results:\n                cached_results[query] = [item[\"value\"] for item in results]\n            return cached_results[query]\n        else:\n            return [item[\"value\"] for item in results]\n    else:\n        return []",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 7,
+        "code": "if \"query\" in data:\\n    query = data[\"query\"]\\n    if query not in cached_results:\\n        cached_results[query] = [item[\"value\"] for item in results]",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return [item[\"value\"] for item in results]",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_api_response"
+  },
+  {
+    "full_function_code": "def calculate_magnitude_of_vectors(vectors):\n    magnitudes = []\n    for vector in vectors:\n        magnitude = (vector[0]**2 + vector[1]**2)**0.5\n        magnitudes.append(magnitude)\n    return magnitudes",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "magnitudes = [((vector[0]**2 + vector[1]**2)**0.5) for vector in vectors]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for vector in vectors:\n        magnitude = (vector[0]**2 + vector[1]**2)**0.5\n        magnitudes.append(magnitude)",
+        "line_count": 3
+      }
+    ],
+    "function_name": "calculate_magnitude_of_vectors"
+  },
+  {
+    "full_function_code": "def parse_text_document(document: str) -> dict:\n    # Initialize the result dictionary\n    result = {}\n    # Split the document into lines\n    lines = document.split(\"\\n\")\n    # Iterate over each line\n    for line in lines:\n        # Remove leading/trailing whitespace\n        line = line.strip()\n        # Check if the line is a header\n        if line.startswith(\"## \"):\n            # Extract the header text\n            header_text = line[3:]\n            # Add the header to the result dictionary\n            result['header'] = header_text\n        # Check if the line is a paragraph\n        elif line.startswith(\"### \"):\n            # Extract the paragraph text\n            paragraph_text = line[4:]\n            # Add the paragraph to the result dictionary\n            if 'paragraphs' not in result:\n                result['paragraphs'] = []\n            result['paragraphs'].append(paragraph_text)\n    # Return the result dictionary\n    return result",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 12,
+        "code": "        # Check if the line is a paragraph\n        elif line.startswith(\"### \"):\n            # Extract the paragraph text\n            paragraph_text = line[4:]\n",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 9,
+        "end_line": 9,
+        "code": "        # Check if the line is a paragraph and add it to the result dictionary\n        if line.startswith(\"### \"):\n",
+        "line_count": 1
+      }
+    ],
+    "function_name": "parse_text_document"
+  },
+  {
+    "full_function_code": "def calculate_eccentricity(a, b):\n    # Calculate the eccentricity of an ellipse\n    if a == 0 or b == 0:\n        raise ValueError(\"Both a and b must be non-zero\")\n    eccentricity = (1 - (b ** 2 / a ** 2)) ** 0.5\n    if eccentricity < 0:\n        raise ValueError(\"Eccentricity cannot be negative\")\n    # Check if the ellipse is a circle\n    if a == b:\n        return 0\n    return eccentricity",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "    # Check if the ellipse is a circle\n    if a == b:",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "    return eccentricity",
+        "line_count": 1
+      }
+    ],
+    "function_name": "calculate_eccentricity"
+  },
+  {
+    "full_function_code": "def aggregate_customer_data(customer_ids, data_source):\n    if not isinstance(customer_ids, list) or not all(isinstance(id, int) for id in customer_ids):\n        raise ValueError(\"Invalid customer IDs\")\n    if not isinstance(data_source, str):\n        raise ValueError(\"Invalid data source\")\n    try:\n        aggregated_data = {}\n        for customer_id in customer_ids:\n            # Fetch data from source\n            customer_data = fetch_data_from_source(data_source, customer_id)\n            if customer_data is not None:\n                aggregated_data[customer_id] = customer_data\n                print(\"INFO: Fetched data for customer ID \", customer_id)\n        return aggregated_data\n    except Exception as e:\n        print(\"ERROR: An error occurred - \", str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 11,
+        "end_line": 12,
+        "code": "print(\"INFO: Fetched data for customer ID \", customer_id)\\n        except Exception as e:\\n            print(\"ERROR: An error occurred - \", str(e))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "# logging.info(\"Data fetched for customer ID: \" + str(customer_id))",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_customer_data"
+  },
+  {
+    "full_function_code": "def handle_api_response(response):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    if response.status_code == 200:\n        data = response.json()\n        # Process the data\n        for item in data:\n            logging.info(\"Processed item: %s\", item)\n    else:\n        logging.error(\"Error handling response: %s\", response.text)\n    end_time = time.time()\n    logging.info(\"Processing time: %f seconds\", end_time - start_time)\n",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "        for item in data:\\n            logging.info(\"Processed item: %s\", item)",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 12,
+        "code": "    # Unused code block\\n    # if response.status_code == 500:\\n    #     logging.error(\"Server error\")",
+        "line_count": 3
+      }
+    ],
+    "function_name": "handle_api_response"
+  },
+  {
+    "full_function_code": "def validate_user_input(user_data):\n    if not isinstance(user_data, dict):\n        raise ValueError(\"Invalid input: user_data must be a dictionary\")\n    required_fields = [\"username\", \"email\", \"password\"]\n    for field in required_fields:\n        if field not in user_data:\n            raise ValueError(f\"Missing required field: {field}\")\n    if not user_data[\"username\"]:\n        raise ValueError(\"Username cannot be empty\")\n    if not user_data[\"email\"]:\n        raise ValueError(\"Email cannot be empty\")\n    if len(user_data[\"password\"]) < 8:\n        raise ValueError(\"Password must be at least 8 characters long\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 7,
+        "end_line": 9,
+        "code": "if not user_data[\"username\"]:\n        raise ValueError(\"Username cannot be empty\")\n    if not user_data[\"email\"]:\n        raise ValueError(\"Email cannot be empty\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "if len(user_data[\"password\"]) < 6:",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def validate_user_input(data: dict) -> bool:\n    try:\n        if not isinstance(data, dict):\n            raise ValueError(\"Input data must be a dictionary\")\n        if \"name\" not in data or \"email\" not in data:\n            raise KeyError(\"Name and email are required fields\")\n        if not isinstance(data[\"name\"], str) or not isinstance(data[\"email\"], str):\n            raise TypeError(\"Name and email must be strings\")\n        # Check if email is valid\n        import re\n        email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n        if not re.match(email_pattern, data[\"email\"]):\n            raise ValueError(\"Invalid email format\")\n        return True\n    except ValueError as ve:\n        print(f\"Value error: {ve}\")\n        return False\n    except KeyError as ke:\n        print(f\"Key error: {ke}\")\n        return False\n    except TypeError as te:\n        print(f\"Type error: {te}\")\n        return False\n    except Exception as e:\n        print(f\"Unexpected error: {e}\")\n        return False",
+    "added_code": [
+      {
+        "start_line": 13,
+        "end_line": 15,
+        "code": "except Exception as e:\n        print(f\\\"Unexpected error: {e}\\\")\n        return False",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 12,
+        "code": "        # Deprecated email validation function\n        if not validate_email(data[\"email\"]):\n            raise ValueError(\"Invalid email format\")",
+        "line_count": 3
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def optimize_network_latency(graph, node_count, edge_count):\n    latencies = [0] * node_count\n    for i in range(node_count):\n        for j in range(edge_count):\n            # Removed dead code\n            # if graph[i][j] > 0:\n            #     latencies[i] += 1\n        latencies[i] = sum(1 for j in range(edge_count) if graph[i][j] > 0)\n    return latencies",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "latencies[i] = sum(1 for j in range(edge_count) if graph[i][j] > 0)",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 4,
+        "end_line": 6,
+        "code": "for j in range(edge_count):\n            # if graph[i][j] > 0:\n            #     latencies[i] += 1",
+        "line_count": 3
+      }
+    ],
+    "function_name": "optimize_network_latency"
+  },
+  {
+    "full_function_code": "def aggregate_customer_data(customer_id, data_source):\n    import logging\n    import time\n    start_time = time.time()\n    logging.info(\"Aggregating customer data for customer_id: \" + str(customer_id))\n    customer_data = {}\n    for item in data_source:\n        if item['customer_id'] == customer_id:\n            customer_data[item['data_type']] = item['data_value']\n    logging.info(\"Data aggregation completed in \" + str(time.time() - start_time) + \" seconds\")\n    return customer_data",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 5,
+        "code": "import logging\\nimport time\\nstart_time = time.time()\\nlogging.info(\"Aggregating customer data for customer_id: \" + str(customer_id))",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "# customer_data = None",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_customer_data"
+  },
+  {
+    "full_function_code": "def validate_user_input(data):\n    validated_data = []\n    for item in data:\n        if isinstance(item, str) and item.strip() != \"\":\n            validated_data.append(item.strip())\n    return validated_data",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "validated_data = [item.strip() for item in data if isinstance(item, str) and item.strip() != \"\"]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for item in data:\n        if isinstance(item, str) and item.strip() != \"\":\n            validated_data.append(item.strip())",
+        "line_count": 3
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def aggregate_and_filter_data(data_list, filter_criteria):\n    import logging\n    import time\n    start_time = time.time()\n    logging.info(\"Starting data aggregation and filtering\")\n    # Apply filter criteria to data list\n    filtered_data = [data for data in data_list if data['value'] > filter_criteria]\n    # Log the number of filtered data points\n    logging.info(\"Filtered out {} data points\".format(len(data_list) - len(filtered_data)))\n    # Measure the execution time\n    end_time = time.time()\n    logging.info(\"Data aggregation and filtering completed in {} seconds\".format(end_time - start_time))\n    return filtered_data",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "    # Log the number of filtered data points\n    logging.info(\"Filtered out {} data points\".format(len(data_list) - len(filtered_data)))\n    # Measure the execution time",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 12,
+        "code": "    # Dead code: unused variable\n    unused_var = None\n    # Dead code: unused function call\n    unused_function()",
+        "line_count": 3
+      }
+    ],
+    "function_name": "aggregate_and_filter_data"
+  },
+  {
+    "full_function_code": "def parse_text_file(file_path: str) -> list:\n    try:\n        with open(file_path, \"r\") as file:\n            lines = file.readlines()\n            parsed_lines = []\n            for line in lines:\n                if line.strip():\n                    parsed_lines.append(line.strip())\n                else:\n                    print(\"Warning: Empty line encountered.\")\n            return parsed_lines\n    except FileNotFoundError:\n        print(\"Error: File not found.\")\n        return []\n    except Exception as e:\n        print(f\"An error occurred: {e}\")\n        return []",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "            if len(parsed_lines) == 0:\n                print(\"Warning: No valid lines found in the file.\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 12,
+        "end_line": 12,
+        "code": "        return None",
+        "line_count": 1
+      }
+    ],
+    "function_name": "parse_text_file"
+  },
+  {
+    "full_function_code": "def optimize_data_processing(data):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    # Removed dead code\n    optimized_data = [x for x in data if x > 0]\n    logging.info(\"Data optimized in %.2f seconds\" % (time.time() - start_time))\n    return optimized_data",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 5,
+        "code": "logging.basicConfig(level=logging.INFO)\nlogging.info(\"Data optimized in %.2f seconds\" % (time.time() - start_time))",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 6,
+        "code": "# Dead code\n# for x in data:\n#     if x < 0:\n#         data.remove(x)",
+        "line_count": 4
+      }
+    ],
+    "function_name": "optimize_data_processing"
+  },
+  {
+    "full_function_code": "def handle_api_response(response):\n    if response.status_code == 200:\n        data = response.json()\n        # Extract relevant information from the response data\n        relevant_info = [item['id'] for item in data['items'] if item['status'] == 'active']\n        return relevant_info\n    else:\n        return []",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "relevant_info = [item['id'] for item in data['items'] if item['status'] == 'active']",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "relevant_info = []\n        for item in data['items']:\n            if item['status'] == 'active':\n                relevant_info.append(item['id'])",
+        "line_count": 4
+      }
+    ],
+    "function_name": "handle_api_response"
+  },
+  {
+    "full_function_code": "def validate_user_input(data):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    if not isinstance(data, dict):\n        logging.warning(\"Input data is not a dictionary\")\n        return False\n    required_fields = [\"name\", \"email\", \"phone\"]\n    for field in required_fields:\n        if field not in data:\n            logging.warning(\"Missing required field: \" + field)\n            return False\n    if not isinstance(data[\"name\"], str) or not isinstance(data[\"email\"], str) or not isinstance(data[\"phone\"], str):\n        logging.warning(\"Invalid data type for name, email, or phone\")\n        return False\n    logging.info(\"Input data is valid\")\n    end_time = time.time()\n    logging.info(\"Validation took \" + str(end_time - start_time) + \" seconds\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "logging.info(\"Input data is valid\")\nend_time = time.time()\nlogging.info(\"Validation took \" + str(end_time - start_time) + \" seconds\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 7,
+        "code": "if not all(field in data for field in required_fields):\n    return False",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def validate_and_parse_user_input(input_data: dict) -> dict:\n    if not isinstance(input_data, dict):\n        raise ValueError(\"Input data must be a dictionary\")\n    required_fields = [\"username\", \"email\", \"phone_number\"]\n    for field in required_fields:\n        if field not in input_data:\n            raise ValueError(f\"Missing required field: {field}\")\n    if not input_data[\"username\"]:\n        raise ValueError(\"Username cannot be empty\")\n    if not input_data[\"email\"]:\n        raise ValueError(\"Email cannot be empty\")\n    # Validate email format\n    import re\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n    if not re.match(email_pattern, input_data[\"email\"]):\n        raise ValueError(\"Invalid email format\")\n    return input_data",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 12,
+        "code": "    # Validate email format\\n    import re\\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\\\.[a-zA-Z0-9-.]+$\"\\n    if not re.match(email_pattern, input_data[\\\"email\\\"]):\\n        raise ValueError(\"Invalid email format\")",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 8,
+        "code": "    if not input_data[\"email\"]:\\n        pass",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_and_parse_user_input"
+  },
+  {
+    "full_function_code": "def validate_user_input_data(input_dict):\n    required_fields = [\"username\", \"email\", \"phone_number\"]\n    if not isinstance(input_dict, dict):\n        raise ValueError(\"Input must be a dictionary\")\n    for field in required_fields:\n        if field not in input_dict:\n            raise ValueError(f\"Missing required field: {field}\")\n    # Old validation logic\n    # if not validate_input_data_DEPRECATED(input_dict):\n    #     raise ValueError(\"Invalid input data\")\n    new_validation_result = validate_input_data_NEW(input_dict)\n    if not new_validation_result:\n        raise ValueError(\"Invalid input data\")\n    return True",
+    "added_code": [
+      {
+        "start_line": 7,
+        "end_line": 9,
+        "code": "new_validation_result = validate_input_data_NEW(input_dict)\nif not new_validation_result:\n    raise ValueError(\"Invalid input data\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "# if not validate_input_data_DEPRECATED(input_dict):\n#     raise ValueError(\"Invalid input data\")",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_user_input_data"
+  },
+  {
+    "full_function_code": "def extract_sentences_from_text(text):\n    # Split text into sentences\n    sentences = text.split('. ')\n    # Validate input text\n    if not isinstance(text, str) or len(text) == 0:\n        raise ValueError(\"Input text must be a non-empty string\")\n    # Remove leading/trailing whitespace from each sentence\n    sentences = [sentence.strip() for sentence in sentences]\n    # Filter out empty sentences\n    sentences = [sentence for sentence in sentences if sentence]\n    return sentences",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "    # Validate input text\n    if not isinstance(text, str) or len(text) == 0:\n        raise ValueError(\"Input text must be a non-empty string\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 1,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "extract_sentences_from_text"
+  },
+  {
+    "full_function_code": "def aggregate_sensor_data(sensor_readings, error_threshold):\n    try:\n        aggregated_data = {}\n        for reading in sensor_readings:\n            sensor_id = reading['sensor_id']\n            if sensor_id not in aggregated_data:\n                aggregated_data[sensor_id] = []\n            aggregated_data[sensor_id].append(reading['value'])\n        for sensor_id, values in aggregated_data.items():\n            if len(values) < error_threshold:\n                raise ValueError(f\"Insufficient data for sensor {sensor_id}\")\n            aggregated_data[sensor_id] = sum(values) / len(values)\n        return aggregated_data\n    except ValueError as e:\n        print(f\"Error: {e}\")\n        return None\n    except Exception as e:\n        print(f\"An unexpected error occurred: {e}\")\n        return None",
+    "added_code": [
+      {
+        "start_line": 11,
+        "end_line": 12,
+        "code": "        except ValueError as e:\\n            print(f\\\"Error: {e}\\\")\\n",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 11,
+        "end_line": 11,
+        "code": "        raise",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_sensor_data"
+  },
+  {
+    "full_function_code": "def optimize_database_query(results):\n  try:\n    cached_results = {}\n    optimized_results = [result for result in results if result not in cached_results]\n    cached_results.update({result: True for result in optimized_results})\n    return optimized_results\n  except Exception as e:\n    print(\"Error occurred: \" + str(e))\n    return []",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "except Exception as e:\n    print(\"Error occurred: \" + str(e))",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 4,
+        "end_line": 4,
+        "code": "return optimized_results",
+        "line_count": 1
+      }
+    ],
+    "function_name": "optimize_database_query"
+  },
+  {
+    "full_function_code": "def validate_and_cache_user_data(user_id, user_data):\n    cache = {}\n    if user_id in cache:\n        return cache[user_id]\n    if not isinstance(user_id, int) or not isinstance(user_data, dict):\n        raise ValueError(\"Invalid input type\")\n    if 'name' not in user_data or 'email' not in user_data:\n        raise ValueError(\"Missing required fields\")\n    # Validate email format\n    import re\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n    if not re.match(email_pattern, user_data['email']):\n        raise ValueError(\"Invalid email format\")\n    cache[user_id] = user_data\n    return user_data",
+    "added_code": [
+      {
+        "start_line": 7,
+        "end_line": 9,
+        "code": "    # Validate email format\n    import re\n    email_pattern = r\"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\\\.[a-zA-Z0-9-.]+$\"",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "    pass",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_and_cache_user_data"
+  },
+  {
+    "full_function_code": "def handle_network_response(response):\n    if response.status_code == 200:\n        data = [item['id'] for item in response.json() if 'id' in item]\n        return data\n    else:\n        return []",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "data = [item['id'] for item in response.json() if 'id' in item]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 4,
+        "code": "data = []\nfor item in response.json():\n    if 'id' in item:\n        data.append(item['id'])",
+        "line_count": 3
+      }
+    ],
+    "function_name": "handle_network_response"
+  },
+  {
+    "full_function_code": "def validate_user_input(data):\n    try:\n        # Check if input data is valid\n        if not isinstance(data, dict):\n            raise ValueError(\"Input data must be a dictionary\")\n        \n        # Check if required fields are present\n        required_fields = [\"name\", \"email\", \"phone\"]\n        for field in required_fields:\n            if field not in data:\n                raise ValueError(f\"Missing required field: {field}\")\n        \n        # Validate email format\n        email = data[\"email\"]\n        if not isinstance(email, str) or \"@\" not in email:\n            raise ValueError(\"Invalid email format\")\n        \n        # Validate phone number format\n        phone = data[\"phone\"]\n        if not isinstance(phone, str) or not phone.isdigit():\n            raise ValueError(\"Invalid phone number format\")\n        \n        # If all checks pass, return True\n        return True\n    except ValueError as e:\n        # Log the error and return False\n        print(f\"Error: {e}\")\n        return False",
+    "added_code": [
+      {
+        "start_line": 13,
+        "end_line": 15,
+        "code": "        # Validate phone number format\n        phone = data[\"phone\"]\n        if not isinstance(phone, str) or not phone.isdigit():\n            raise ValueError(\"Invalid phone number format\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 11,
+        "code": "        # Simple email validation (always returns True)\n        email = data[\"email\"]",
+        "line_count": 2
+      }
+    ],
+    "function_name": "validate_user_input"
+  },
+  {
+    "full_function_code": "def handle_network_requests(requests):\n    results = []\n    for request in requests:\n        try:\n            response = send_request(request)\n            results.append(response)\n        except RequestException as e:\n            print(\"Error sending request: \" + str(e))\n    return results",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 6,
+        "code": "results = [send_request(request) for request in requests]\n        ",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for request in requests:\n            try:\n                response = send_request(request)\n                results.append(response)\n            ",
+        "line_count": 4
+      }
+    ],
+    "function_name": "handle_network_requests"
+  },
+  {
+    "full_function_code": "def validate_and_parse_user_input(user_input, input_type):\n    if input_type == \"email\":\n        if not isinstance(user_input, str):\n            raise ValueError(\"Email must be a string\")\n        if len(user_input) > 0 and \"@\" not in user_input:\n            raise ValueError(\"Invalid email format\")\n    elif input_type == \"phone\":\n        if not isinstance(user_input, str):\n            raise ValueError(\"Phone number must be a string\")\n        if len(user_input) > 0 and not user_input.replace(\"-\", \").replace(\" \", \").isdigit():\n            raise ValueError(\"Invalid phone number format\")\n    return user_input",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "        if len(user_input) > 0 and not user_input.replace(\"-\", \").replace(\" \", \").isdigit():\n            raise ValueError(\"Invalid phone number format\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "        if len(user_input) > 0 and not user_input.isdigit():",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_and_parse_user_input"
+  },
+  {
+    "full_function_code": "def extract_sentences_from_text(text):\n    sentences = []\n    sentence_cache = {}\n    for line in text.split(\"\\n\"):\n        for sentence in line.split(\".\"):\n            if sentence:\n                sentence = sentence.strip()\n                if sentence not in sentence_cache:\n                    words = sentence.split()\n                    sentence_cache[sentence] = words\n                else:\n                    words = sentence_cache[sentence]\n                if len(words) > 5:\n                    sentences.append(sentence)\n    return sentences",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "                if sentence not in sentence_cache:\\n                    words = sentence.split()\\n                    sentence_cache[sentence] = words",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "                words = sentence.split()",
+        "line_count": 1
+      }
+    ],
+    "function_name": "extract_sentences_from_text"
+  },
+  {
+    "full_function_code": "def parse_text_file(file_path):\n    try:\n        with open(file_path, \"r\") as file:\n            lines = file.readlines()\n            parsed_lines = []\n            for line in lines:\n                # Remove leading/trailing whitespaces and empty lines\n                line = line.strip()\n                if line:\n                    parsed_lines.append(line)\n            return parsed_lines\n    except FileNotFoundError:\n        print(\"File not found: \" + file_path)\n        return []\n    except Exception as e:\n        print(\"An error occurred: \" + str(e))\n        return []",
+    "added_code": [
+      {
+        "start_line": 11,
+        "end_line": 12,
+        "code": "        print(\"An error occurred: \" + str(e))\n        return []",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "        return []",
+        "line_count": 1
+      }
+    ],
+    "function_name": "parse_text_file"
+  },
+  {
+    "full_function_code": "def compute_eigenvalues(matrix):\n    import numpy as np\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    eigenvalues = np.linalg.eigvals(matrix)\n    logging.info(\"Computed eigenvalues in %.2f seconds\" % (time.time() - start_time))\n    return eigenvalues",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 5,
+        "code": "logging.basicConfig(level=logging.INFO)\nstart_time = time.time()",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 0,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "compute_eigenvalues"
+  },
+  {
+    "full_function_code": "def process_network_requests(requests):\n    try:\n        results = [handle_request(r) for r in requests]\n    except Exception as e:\n        print(\"Error occurred: \" + str(e))\n        results = []\n    return results",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "results = [handle_request(r) for r in requests]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for r in requests:\\n        try:\\n            results.append(handle_request(r))",
+        "line_count": 3
+      }
+    ],
+    "function_name": "process_network_requests"
+  },
+  {
+    "full_function_code": "def optimize_image_processing(image_paths):\n    processed_images = []\n    for path in image_paths:\n        image = open_image(path)\n        processed_image = apply_filter(image)\n        processed_images.append(processed_image)\n    return processed_images",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "processed_images = [apply_filter(open_image(path)) for path in image_paths]",
+        "line_count": 1
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "for path in image_paths:\\n    image = open_image(path)\\n    processed_image = apply_filter(image)\\n    processed_images.append(processed_image)",
+        "line_count": 3
+      }
+    ],
+    "function_name": "optimize_image_processing"
+  },
+  {
+    "full_function_code": "def validate_and_parse_user_input(input_data):\n    try:\n        if not isinstance(input_data, list):\n            raise TypeError(\"Input must be a list\")\n        parsed_data = [int(x) for x in input_data if isinstance(x, str) and x.isdigit()]\n        if not parsed_data:\n            raise ValueError(\"No valid integers found in input\")\n        return parsed_data\n    except TypeError as e:\n        print(\"Error: \" + str(e))\n        return None\n    except ValueError as e:\n        print(\"Error: \" + str(e))\n        return None",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "if not parsed_data:\\n            raise ValueError(\\\"No valid integers found in input\\\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 2,
+        "end_line": 2,
+        "code": "# input_data = [x for x in input_data if isinstance(x, int)]",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_and_parse_user_input"
+  },
+  {
+    "full_function_code": "def extract_domain_info(text):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    if not isinstance(text, str):\n        logging.warning(\"Input is not a string.\")\n        return None\n    lines = text.split('\\n')\n    domain_info = []\n    for line in lines:\n        if line.startswith(\"https://\") or line.startswith(\"http://\"):\n            domain = line.split(\"/\")[2]\n            domain_info.append(domain)\n    logging.info(\"Extracted domain info in %s seconds.\" % (time.time() - start_time))\n    return domain_info",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "if not isinstance(text, str):\n        logging.warning(\"Input is not a string.\")\n        return None",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 0,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "extract_domain_info"
+  },
+  {
+    "full_function_code": "def compute_trigonometric_ratio(num1, num2):\n    if not isinstance(num1, (int, float)) or not isinstance(num2, (int, float)):\n        raise TypeError(\"Both inputs must be numbers\")\n    if num2 == 0:\n        raise ZeroDivisionError(\"Cannot divide by zero\")\n    try:\n        ratio = num1 / num2\n        import logging\n        logging.basicConfig(level=logging.INFO)\n        logging.info(\"Computed trigonometric ratio: \" + str(ratio))\n        return ratio\n    except Exception as e:\n        import logging\n        logging.basicConfig(level=logging.ERROR)\n        logging.error(\"Error computing trigonometric ratio: \" + str(e))",
+    "added_code": [
+      {
+        "start_line": 7,
+        "end_line": 10,
+        "code": "import logging\nlogging.basicConfig(level=logging.INFO)\nlogging.info(\"Computed trigonometric ratio: \" + str(ratio))",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "return num1 / num2",
+        "line_count": 1
+      }
+    ],
+    "function_name": "compute_trigonometric_ratio"
+  },
+  {
+    "full_function_code": "def aggregate_customer_data(customer_ids, data_source):\n    import logging\n    import time\n    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()\n    customer_data = {}\n    for customer_id in customer_ids:\n        customer_info = data_source.get_customer_info(customer_id)\n        if customer_info:\n            customer_data[customer_id] = customer_info\n            logging.info(\"Customer data aggregated for customer ID: \" + str(customer_id))\n    end_time = time.time()\n    logging.info(\"Data aggregation completed in \" + str(end_time - start_time) + \" seconds\")\n    return customer_data",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "        logging.info(\"Customer data aggregated for customer ID: \" + str(customer_id))\n        logging.info(\"Data aggregation for customer ID \" + str(customer_id) + \" took \" + str(time.time() - start_time) + \" seconds\")",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 9,
+        "end_line": 9,
+        "code": "    print(\"Data aggregation completed\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "aggregate_customer_data"
+  },
+  {
+    "full_function_code": "def read_and_parse_csv_file(file_path, delimiter=',', quote_char='\"'):\\n    try:\\n        import csv\\n        with open(file_path, 'r') as file:\\n            csv_reader = csv.reader(file, delimiter=delimiter, quotechar=quote_char)\\n            data = list(csv_reader)\\n            if not data:\\n                raise ValueError('The file is empty')\\n            return data\\n    except FileNotFoundError:\\n        print(f\"The file {file_path} does not exist.\")\\n        return None\\n    except csv.Error as e:\\n        print(f\"Error parsing the file: {e}\")\\n        return None\\n    except Exception as e:\\n        print(f\"An error occurred: {e}\")\\n        return None",
+    "added_code": [
+      {
+        "start_line": 6,
+        "end_line": 8,
+        "code": "            if not data:\\n                raise ValueError('The file is empty')",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 7,
+        "end_line": 7,
+        "code": "            if len(data) == 0: return None",
+        "line_count": 1
+      }
+    ],
+    "function_name": "read_and_parse_csv_file"
+  },
+  {
+    "full_function_code": "def format_user_profiles(user_profiles):\n    formatted_profiles = []\n    for profile in user_profiles:\n        formatted_profile = {\n            \"name\": profile[\"name\"],\n            \"email\": profile[\"email\"],\n            \"phone\": profile[\"phone\"]\n        }\n        formatted_profiles.append(formatted_profile)\n    return formatted_profiles",
+    "added_code": [
+      {
+        "start_line": 4,
+        "end_line": 5,
+        "code": "formatted_profiles = [\\n    {\\n        \\\"name\\\": profile[\\\"name\\\"],\\n        \\\"email\\\": profile[\\\"email\\\"],\\n        \\\"phone\\\": profile[\\\"phone\\\"]\\n    } \\n    for profile in user_profiles\\n]",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 6,
+        "code": "for profile in user_profiles:\\n        formatted_profile = {\\n            \\\"name\\\": profile[\\\"name\\\"],\\n            \\\"email\\\": profile[\\\"email\\\"],\\n            \\\"phone\\\": profile[\\\"phone\\\"]\\n        }\\n        formatted_profiles.append(formatted_profile)",
+        "line_count": 5
+      }
+    ],
+    "function_name": "format_user_profiles"
+  },
+  {
+    "full_function_code": "def format_strings(strings):\n  cache = {}\n  formatted = []\n  for s in strings:\n    if s in cache:\n      formatted.append(cache[s])\n    else:\n      formatted_s = s.replace(\"\\n\", \" \").replace(\"\\t\", \" \")\n      cache[s] = formatted_s\n      formatted.append(formatted_s)\n  return formatted",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 6,
+        "code": "if s in cache:\\n      formatted.append(cache[s])\\n    else:\\n      formatted_s = s.replace(\\\"\\\\n\\\", \\\" \\\").replace(\\\"\\\\t\\\", \\\" \\\")",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "formatted_s = s.replace(\\\"\\\\n\\\", \\\" \\\").replace(\\\"\\\\t\\\", \\\" \\\")",
+        "line_count": 1
+      }
+    ],
+    "function_name": "format_strings"
+  },
+  {
+    "full_function_code": "def fetch_and_parse_user_data(user_id):\n    import logging\n    import time\n    start_time = time.time()\n    try:\n        user_data = fetch_user_data_from_api(user_id)\n        parsed_data = parse_user_data(user_data)\n        logging.info(\"Fetched and parsed user data for user %s in %.2f seconds\" % (user_id, time.time() - start_time))\n        return parsed_data\n    except Exception as e:\n        logging.error(\"Failed to fetch or parse user data for user %s: %s\" % (user_id, str(e)))\n        return None",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "logging.info(\"Fetched and parsed user data for user %s in %.2f seconds\" % (user_id, time.time() - start_time))\n        ",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 6,
+        "end_line": 6,
+        "code": "return parsed_data",
+        "line_count": 1
+      }
+    ],
+    "function_name": "fetch_and_parse_user_data"
+  },
+  {
+    "full_function_code": "def convert_length_units(length, from_unit, to_unit):\n    if from_unit not in [\"meters\", \"centimeters\", \"millimeters\", \"kilometers\"]:\n        raise ValueError(\"Invalid from_unit. Supported units are: meters, centimeters, millimeters, kilometers\")\n    if to_unit not in [\"meters\", \"centimeters\", \"millimeters\", \"kilometers\"]:\n        raise ValueError(\"Invalid to_unit. Supported units are: meters, centimeters, millimeters, kilometers\")\n    conversion_factors = {\n        \"meters\": 1,\n        \"centimeters\": 100,\n        \"millimeters\": 1000,\n        \"kilometers\": 0.001\n    }\n    if from_unit == to_unit:\n        return length\n    else:\n        # Replace deprecated function call with a more efficient approach\n        return length * conversion_factors[from_unit] / conversion_factors[to_unit]\n",
+    "added_code": [
+      {
+        "start_line": 2,
+        "end_line": 5,
+        "code": "if from_unit not in [\\\"meters\\\", \\\"centimeters\\\", \\\"millimeters\\\", \\\"kilometers\\\"]:\\n        raise ValueError:\\\"Invalid from_unit. Supported units are: meters, centimeters, millimeters, kilometers\\\")\\nif to_unit not in [\\\"meters\\\", \\\"centimeters\\\", \\\"millimeters\\\", \\\"kilometers\\\"]:\\n        raise ValueError:\\\"Invalid to_unit. Supported units are: meters, centimeters, millimeters, kilometers\\\")",
+        "line_count": 4
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 11,
+        "code": "# Deprecated function call\n        # return deprecated_convert_length(length, from_unit, to_unit)",
+        "line_count": 2
+      }
+    ],
+    "function_name": "convert_length_units"
+  },
+  {
+    "full_function_code": "def validate_date_range(start_date, end_date):\n    if not isinstance(start_date, str) or not isinstance(end_date, str):\n        raise ValueError(\"Both start_date and end_date must be strings.\")\n    try:\n        start_date_obj = datetime.datetime.strptime(start_date, \"%Y-%m-%d\")\n        end_date_obj = datetime.datetime.strptime(end_date, \"%Y-%m-%d\")\n    except ValueError:\n        raise ValueError(\"Invalid date format. Dates must be in YYYY-MM-DD format.\")\n    if start_date_obj > end_date_obj:\n        raise ValueError(\"Start date cannot be after end date.\")\n    return start_date_obj, end_date_obj",
+    "added_code": [
+      {
+        "start_line": 5,
+        "end_line": 7,
+        "code": "if start_date_obj > end_date_obj:\\n        raise ValueError(\"Start date cannot be after end date.\")",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 5,
+        "end_line": 5,
+        "code": "# return start_date_obj, end_date_obj",
+        "line_count": 1
+      }
+    ],
+    "function_name": "validate_date_range"
+  },
+  {
+    "full_function_code": "def parse_and_normalize_datetime(input_string, date_format):\n    if not isinstance(input_string, str) or not isinstance(date_format, str):\n        raise ValueError(\"Input and date format must be strings\")\n    try:\n        date_object = parse_datetime(input_string, date_format)\n    except ValueError as e:\n        raise ValueError(\"Failed to parse date: \" + str(e))\n    normalized_date_string = date_object.strftime(\"%Y-%m-%d %H:%M:%S\")\n    return normalized_date_string\n\n",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "try:\n        date_object = parse_datetime(input_string, date_format)\n    except ValueError as e:",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "date_object = parse_datetime(input_string, date_format)",
+        "line_count": 1
+      }
+    ],
+    "function_name": "parse_and_normalize_datetime"
+  },
+  {
+    "full_function_code": "def calculate_magnitude(vector):\n  # Calculate the magnitude of a vector using the Pythagorean theorem\n  magnitude = (vector[0]**2 + vector[1]**2)**0.5\n  # Improved performance by avoiding unnecessary variable\n  # and directly returning the calculated value\n  return magnitude",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 4,
+        "code": "# Improved performance by avoiding unnecessary variable\n  # and directly returning the calculated value",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 3,
+        "end_line": 3,
+        "code": "# Intermediate step to improve readability",
+        "line_count": 1
+      }
+    ],
+    "function_name": "calculate_magnitude"
+  },
+  {
+    "full_function_code": "def handle_network_request(url, timeout, retry_count):\n    try:\n        # Create a cache to store intermediate results\n        cache = {}\n        if url in cache:\n            return cache[url]\n        response = send_request(url, timeout)\n        if response.status_code == 200:\n            cache[url] = response.json()\n            return cache[url]\n        else:\n            raise RequestException(\"Failed to retrieve data\")\n    except RequestException as e:\n        if retry_count > 0:\n            return handle_network_request(url, timeout, retry_count - 1)\n        else:\n            raise e\n    except Exception as e:\n        logging.error(\"An error occurred: \" + str(e))\n        raise",
+    "added_code": [
+      {
+        "start_line": 9,
+        "end_line": 11,
+        "code": "except Exception as e:\\n        logging.error(\"An error occurred: \" + str(e))\\n        raise",
+        "line_count": 3
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 10,
+        "end_line": 10,
+        "code": "raise",
+        "line_count": 1
+      }
+    ],
+    "function_name": "handle_network_request"
+  },
+  {
+    "full_function_code": "def format_timestamp(timestamp):\n  import logging\n  import time\n  logging.basicConfig(level=logging.INFO)\n  start_time = time.time()\n  try:\n    timestamp = int(timestamp)\n    formatted_timestamp = time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime(timestamp))\n    logging.info(\"Formatted timestamp: %s\" % formatted_timestamp)\n  except ValueError:\n    logging.error(\"Invalid timestamp\")\n  end_time = time.time()\n  logging.info(\"Function execution time: %f seconds\" % (end_time - start_time))\n  return formatted_timestamp",
+    "added_code": [
+      {
+        "start_line": 3,
+        "end_line": 5,
+        "code": "    logging.basicConfig(level=logging.INFO)\n    start_time = time.time()",
+        "line_count": 2
+      }
+    ],
+    "deleted_code": [
+      {
+        "start_line": 0,
+        "end_line": 1,
+        "code": "",
+        "line_count": 0
+      }
+    ],
+    "function_name": "format_timestamp"
+  }
+]
