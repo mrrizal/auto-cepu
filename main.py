@@ -7,6 +7,9 @@ from ingestion import (
 )
 from config import Config
 from api import app
+from fine_tunning.generate_synthetic_dataset import (
+    generate_synthetic_dataset
+)
 
 
 if __name__ == "__main__":
@@ -16,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('--clone', action='store_true', help='Clone the repository before processing')
     parser.add_argument('--index', action='store_true', help='Index the parsed code chunks')
     parser.add_argument('--run-server', action='store_true', help='Run the FastAPI server')
+    parser.add_argument('--generate-synthetic-dataset', action='store_true', help='Generate a synthetic dataset for testing')
     args = parser.parse_args()
 
     if args.clone and args.repo_url and args.name:
@@ -42,3 +46,7 @@ if __name__ == "__main__":
     if args.run_server:
         import uvicorn
         uvicorn.run("api:app", reload=True, log_level="debug")
+
+    if args.generate_synthetic_dataset:
+        print("Generating synthetic dataset...")
+        generate_synthetic_dataset()
